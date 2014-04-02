@@ -836,15 +836,38 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
     unsigned int hopCount = rreq->getHopCount();
     simtime_t minimalLifeTime = simTime() + 2 * netTraversalTime - 2 * hopCount * nodeTraversalTime;
     simtime_t newLifeTime = std::max(simTime(), minimalLifeTime);
-
+    int rreqSeqNum = rreq->getOriginatorSeqNum();
     if (!reverseRoute || reverseRoute->getSource() != this) // create
     {
         // This reverse route will be needed if the node receives a RREP back to the
         // node that originated the RREQ (identified by the Originator IP Address).
-        createRoute(rreq->getOriginatorAddr(), sourceAddr, hopCount, true, rreq->getOriginatorSeqNum(), true, newLifeTime);
+        createRoute(rreq->getOriginatorAddr(), sourceAddr, hopCount, true, rreqSeqNum, true, newLifeTime);
     }
     else
-        updateRoutingTable(reverseRoute, sourceAddr, hopCount, true, rreq->getOriginatorSeqNum(), true, newLifeTime);
+    {
+        AODVRouteData * routeData = dynamic_cast<AODVRouteData*>(reverseRoute->getProtocolData());
+        int routeSeqNum = routeData->getDestSeqNum();
+        int newSeqNum = std::max(routeSeqNum, rreqSeqNum);
+        int newHopCount = rreq->getHopCount(); // Note: already incremented by 1.
+        int routeHopCount = reverseRoute->getMetric();
+        // The route is only updated if the new sequence number is either
+        //
+        //   (i)       higher than the destination sequence number in the route
+        //             table, or
+        //
+        //   (ii)      the sequence numbers are equal, but the hop count (of the
+        //             new information) plus one, is smaller than the existing hop
+        //             count in the routing table, or
+        //
+        //   (iii)     the sequence number is unknown.
+
+        if (rreqSeqNum > routeSeqNum ||
+           (rreqSeqNum == routeSeqNum && newHopCount < routeHopCount) ||
+           rreq->getUnknownSeqNumFlag())
+        {
+            updateRoutingTable(reverseRoute, sourceAddr, hopCount, true, newSeqNum, true, newLifeTime);
+        }
+    }
 
     // A node generates a RREP if either:
     //
