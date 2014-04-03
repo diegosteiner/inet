@@ -300,14 +300,6 @@ void AODVRouting::sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned in
             timeToLive = netDiameter;
             rrepTimerMsg->setLastTTL(netDiameter);
         }
-
-        if (rrepTimerMsg->getLastTTL() == netDiameter && rrepTimerMsg->getFromInvalidEntry())
-            scheduleAt(simTime() + netTraversalTime, rrepTimerMsg);
-        else
-        {
-            double ringTraversalTime = 2.0 * nodeTraversalTime * (timeToLive + timeoutBuffer);
-            scheduleAt(simTime() + ringTraversalTime, rrepTimerMsg);
-        }
     }
     else
     {
@@ -319,13 +311,12 @@ void AODVRouting::sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned in
         newRREPTimerMsg->setLastTTL(ttlStart);
         newRREPTimerMsg->setFromInvalidEntry(false);
         newRREPTimerMsg->setDestAddr(rreq->getDestAddr());
-
-        // Each time, the timeout for receiving a RREP is RING_TRAVERSAL_TIME.
-        double ringTraversalTime = 2.0 * nodeTraversalTime * (ttlStart + timeoutBuffer);
-
-        scheduleAt(simTime() + ringTraversalTime, newRREPTimerMsg);
-
     }
+
+    // Each time, the timeout for receiving a RREP is RING_TRAVERSAL_TIME.
+    double ringTraversalTime = 2.0 * nodeTraversalTime * (timeToLive + timeoutBuffer);
+    scheduleAt(simTime() + ringTraversalTime, newRREPTimerMsg);
+
     EV_INFO << "Sending a Route Request with target " << rreq->getDestAddr() << " and TTL= " << timeToLive << endl;
     sendAODVPacket(rreq, destAddr, timeToLive, par("jitter"));
     rreqCount++;
