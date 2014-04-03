@@ -171,6 +171,15 @@ INetfilter::IHook::Result AODVRouting::ensureRouteForDatagram(INetworkDatagram *
         if (isActive && !route->getNextHopAsGeneric().isUnspecified())
         {
             EV_INFO << "Active route found: " << route << endl;
+
+            // Each time a route is used to forward a data packet, its Active Route
+            // Lifetime field of the source, destination and the next hop on the
+            // path to the destination is updated to be no less than the current
+            // time plus ACTIVE_ROUTE_TIMEOUT.
+
+            updateValidRouteLifeTime(destAddr, simTime() + activeRouteTimeout);
+            updateValidRouteLifeTime(route->getNextHopAsGeneric(), simTime() + activeRouteTimeout);
+
             return ACCEPT;
         }
         else if (sourceAddr.isUnspecified() || routingTable->isLocalAddress(sourceAddr))
