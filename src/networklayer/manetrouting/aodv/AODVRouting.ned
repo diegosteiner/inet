@@ -47,7 +47,11 @@ simple AODVRouting
         bool askGratuitousRREP = default(false); // please, see the RFC 3561: 6.6.3
         bool useHelloMessages = default(false); // please, see the RFC 3561: 6.9
         int udpPort = default(654);
-        double jitter @unit("s") = default(uniform(50ms,100ms)); // the delay when we broadcast a control packet
+        // **Note on jitter: An IMPORTANT TODO (or limitiation?)**:
+        // Choosing the correct jitter is not trivial and it depends on the network structure and other parameters
+        // (e. g. speed of the nodes)
+        // A badly choesen jitter could lead to high packet loss rate.
+        double jitter @unit("s") = default(uniform(0ms,5ms)); // the delay when we broadcast a control packet
         double helloInterval @unit("s") = default(1s); // every helloInterval seconds a node broadcasts Hello messages (if it is necessary)
         int allowedHelloLoss = default(2); // allowedHelloLoss * helloInterval is the lifetime value for Hello messages
         double activeRouteTimeout @unit("s") = default(3s); // the timeout value for cached routes
