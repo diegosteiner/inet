@@ -1224,6 +1224,7 @@ void AODVRouting::handleRERR(AODVRERR* rerr, const Address& sourceAddr)
 
     if (unreachableNeighbors.size() > 0 && (simTime() > rebootTime + deletePeriod || rebootTime == 0))
     {
+       EV_INFO << "Sending RERR to inform our neighbors about link breaks." << endl;
        AODVRERR * newRERR = createRERR(unreachableNeighbors, unreachableNeighborsDestSeqNum);
        sendAODVPacket(newRERR, addressType->getBroadcastAddress(),1,0);
        rerrCount++;
