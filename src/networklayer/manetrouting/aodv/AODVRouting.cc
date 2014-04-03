@@ -1044,11 +1044,6 @@ void AODVRouting::receiveSignal(cComponent* source, simsignal_t signalID, cObjec
 
 void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
 {
-    if (rerrCount >= rerrRatelimit)
-    {
-        EV_WARN << "A node should not generate more than RERR_RATELIMIT RERR messages per second. Canceling sending RERR" << endl;
-        return;
-    }
 
     // For case (i), the node first makes a list of unreachable destinations
     // consisting of the unreachable neighbor and any additional
@@ -1109,8 +1104,6 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
         }
     }
 
-    AODVRERR * rerr = createRERR(unreachableNeighbors,unreachableNeighborsDestSeqNum);
-
     // The neighboring node(s) that should receive the RERR are all those
     // that belong to a precursor list of at least one of the unreachable
     // destination(s) in the newly created RERR.  In case there is only one
@@ -1120,6 +1113,13 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
     // TTL == 1) with the unreachable destinations, and their corresponding
     // destination sequence numbers, included in the packet.
 
+    if (rerrCount >= rerrRatelimit)
+    {
+        EV_WARN << "A node should not generate more than RERR_RATELIMIT RERR messages per second. Canceling sending RERR" << endl;
+        return;
+    }
+
+    AODVRERR * rerr = createRERR(unreachableNeighbors,unreachableNeighborsDestSeqNum);
     rerrCount++;
 
     // broadcast
