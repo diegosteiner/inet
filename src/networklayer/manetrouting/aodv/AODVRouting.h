@@ -147,7 +147,7 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         AODVRREPACK * createRREPACK();
         AODVRREP * createHelloMessage();
         AODVRREQ * createRREQ(const Address& destAddr);
-        AODVRREP * createRREP(AODVRREQ * rreq, IRoute * destRoute, const Address& sourceAddr);
+        AODVRREP * createRREP(AODVRREQ * rreq, IRoute * destRoute, IRoute * originatorRoute, const Address& sourceAddr);
         AODVRREP * createGratuitousRREP(AODVRREQ * rreq, IRoute * originatorRoute);
         AODVRERR * createRERR(const std::vector<Address>& unreachableNeighbors, const std::vector<unsigned int>& unreachableNeighborsDestSeqNum);
 
