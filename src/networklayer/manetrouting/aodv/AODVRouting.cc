@@ -560,22 +560,22 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
     // Then the forward route for this destination is created if it does not
     // already exist.
 
-    IRoute * route = routingTable->findBestMatchingRoute(rrep->getDestAddr());
-    AODVRouteData * routeData = NULL;
+    IRoute * destRoute = routingTable->findBestMatchingRoute(rrep->getDestAddr());
+    AODVRouteData * destRouteData = NULL;
     simtime_t lifeTime = rrep->getLifeTime();
     unsigned int destSeqNum = rrep->getDestSeqNum();
 
-    if (route && route->getSource() == this) // already exists
+    if (destRoute && destRoute->getSource() == this) // already exists
     {
-        routeData = dynamic_cast<AODVRouteData *>(route->getProtocolData());
+        destRouteData = dynamic_cast<AODVRouteData *>(destRoute->getProtocolData());
         // Upon comparison, the existing entry is updated only in the following circumstances:
 
         // (i) the sequence number in the routing table is marked as
         //     invalid in route table entry.
 
-        if (!routeData->hasValidDestNum())
+        if (!destRouteData->hasValidDestNum())
         {
-            updateRoutingTable(route, sourceAddr, newHopCount, true, destSeqNum, false, simTime() + lifeTime);
+            updateRoutingTable(destRoute, sourceAddr, newHopCount, true, destSeqNum, false, simTime() + lifeTime);
             /*
                If the route table entry to the destination is created or updated,
                then the following actions occur:
@@ -600,30 +600,30 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
         // (ii) the Destination Sequence Number in the RREP is greater than
         //      the node's copy of the destination sequence number and the
         //      known value is valid, or
-        else if (destSeqNum > routeData->getDestSeqNum())
+        else if (destSeqNum > destRouteData->getDestSeqNum())
         {
-            updateRoutingTable(route, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
+            updateRoutingTable(destRoute, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
         }
         else
         {
             // (iii) the sequence numbers are the same, but the route is
             //       marked as inactive, or
-            if (destSeqNum == routeData->getDestSeqNum() && !routeData->isActive())
+            if (destSeqNum == destRouteData->getDestSeqNum() && !destRouteData->isActive())
             {
-                updateRoutingTable(route, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
+                updateRoutingTable(destRoute, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
             }
             // (iv) the sequence numbers are the same, and the New Hop Count is
             //      smaller than the hop count in route table entry.
-            else if (destSeqNum == routeData->getDestSeqNum() && newHopCount < (unsigned int) route->getMetric())
+            else if (destSeqNum == destRouteData->getDestSeqNum() && newHopCount < (unsigned int) destRoute->getMetric())
             {
-                updateRoutingTable(route, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
+                updateRoutingTable(destRoute, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
             }
         }
     }
     else // create forward route for the destination: this path will be used by the originator to send data packets
     {
-        route = createRoute(rrep->getDestAddr(), sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
-        routeData = dynamic_cast<AODVRouteData *>(route->getProtocolData());
+        destRoute = createRoute(rrep->getDestAddr(), sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
+        destRouteData = dynamic_cast<AODVRouteData *>(destRoute->getProtocolData());
     }
 
     // If the current node is not the node indicated by the Originator IP
@@ -686,7 +686,7 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
         if (hasOngoingRouteDiscovery(rrep->getDestAddr()))
         {
             EV_INFO << "The Route Reply has arrived for our Route Request to node " << rrep->getDestAddr() << endl;
-            updateRoutingTable(route, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
+            updateRoutingTable(destRoute, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
             completeRouteDiscovery(rrep->getDestAddr());
         }
     }
