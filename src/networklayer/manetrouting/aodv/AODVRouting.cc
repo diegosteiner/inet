@@ -650,7 +650,7 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
     // packet, and then forwards the RREP towards the originator using the
     // information in that route table entry.
 
-    IRoute * forwardRREPRoute = routingTable->findBestMatchingRoute(rrep->getOriginatorAddr());
+    IRoute * originatorRoute = routingTable->findBestMatchingRoute(rrep->getOriginatorAddr());
     if (getSelfIPAddress() != rrep->getOriginatorAddr())
     {
         // If a node forwards a RREP over a link that is likely to have errors or
@@ -658,16 +658,16 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
         // recipient of the RREP acknowledge receipt of the RREP by sending a RREP-ACK
         // message back (see section 6.8).
 
-        if (forwardRREPRoute && forwardRREPRoute->getSource() == this)
+        if (originatorRoute && originatorRoute->getSource() == this)
         {
-            AODVRouteData * forwardRREPRouteData = dynamic_cast<AODVRouteData *>(forwardRREPRoute->getProtocolData());
+            AODVRouteData * originatorRouteData = dynamic_cast<AODVRouteData *>(originatorRoute->getProtocolData());
 
             // Also, at each node the (reverse) route used to forward a
             // RREP has its lifetime changed to be the maximum of (existing-
             // lifetime, (current time + ACTIVE_ROUTE_TIMEOUT).
 
-            simtime_t existingLifeTime = forwardRREPRouteData->getLifeTime();
-            forwardRREPRouteData->setLifeTime(std::max(simTime() + activeRouteTimeout, existingLifeTime));
+            simtime_t existingLifeTime = originatorRouteData->getLifeTime();
+            originatorRouteData->setLifeTime(std::max(simTime() + activeRouteTimeout, existingLifeTime));
 
             if (simTime() > rebootTime + deletePeriod || rebootTime == 0)
             {
@@ -687,7 +687,7 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
                 // corresponding destination node is updated by adding to it
                 // the next hop node to which the RREP is forwarded.
 
-                destRouteData->addPrecursor(forwardRREPRoute->getNextHopAsGeneric());
+                destRouteData->addPrecursor(originatorRoute->getNextHopAsGeneric());
 
                 // Finally, the precursor list for the next hop towards the
                 // destination is updated to contain the next hop towards the
@@ -696,10 +696,10 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
                 IRoute * nextHopToDestRoute = routingTable->findBestMatchingRoute(destRoute->getNextHopAsGeneric());
                 ASSERT(nextHopToDestRoute);
                 AODVRouteData * nextHopToDestRouteData = dynamic_cast<AODVRouteData*>(nextHopToDestRoute->getProtocolData());
-                nextHopToDestRouteData->addPrecursor(forwardRREPRoute->getNextHopAsGeneric());
+                nextHopToDestRouteData->addPrecursor(originatorRoute->getNextHopAsGeneric());
 
                 AODVRREP * outgoingRREP = rrep->dup();
-                forwardRREP(outgoingRREP, forwardRREPRoute->getNextHopAsGeneric(), 100);
+                forwardRREP(outgoingRREP, originatorRoute->getNextHopAsGeneric(), 100);
             }
         }
         else
