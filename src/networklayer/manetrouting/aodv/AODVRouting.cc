@@ -444,7 +444,7 @@ AODVRREP* AODVRouting::createRREP(AODVRREQ * rreq, IRoute * destRoute, IRoute * 
         // its own sequence number by one if the sequence number in the RREQ
         // packet is equal to that incremented value.
 
-        if (sequenceNum + 1 == rreq->getDestSeqNum()) // TODO: check for unknown seqflag
+        if (!rreq->getUnknownSeqNumFlag() && sequenceNum + 1 == rreq->getDestSeqNum())
             sequenceNum++;
 
         // The destination node places its (perhaps newly incremented)
