@@ -265,10 +265,11 @@ void AODVRouting::sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned in
     }
 
     std::map<Address, WaitForRREP *>::iterator rrepTimer = waitForRREPTimers.find(rreq->getDestAddr());
+    WaitForRREP * rrepTimerMsg = NULL;
 
     if (rrepTimer != waitForRREPTimers.end())
     {
-        WaitForRREP * rrepTimerMsg = rrepTimer->second;
+        rrepTimerMsg = rrepTimer->second;
         unsigned int lastTTL = rrepTimerMsg->getLastTTL();
         rrepTimerMsg->setDestAddr(rreq->getDestAddr());
 
@@ -303,19 +304,19 @@ void AODVRouting::sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned in
     }
     else
     {
-        WaitForRREP * newRREPTimerMsg = new WaitForRREP();
-        waitForRREPTimers[rreq->getDestAddr()] = newRREPTimerMsg;
+        rrepTimerMsg = new WaitForRREP();
+        waitForRREPTimers[rreq->getDestAddr()] = rrepTimerMsg;
         ASSERT(hasOngoingRouteDiscovery(rreq->getDestAddr()));
 
         timeToLive = ttlStart;
-        newRREPTimerMsg->setLastTTL(ttlStart);
-        newRREPTimerMsg->setFromInvalidEntry(false);
-        newRREPTimerMsg->setDestAddr(rreq->getDestAddr());
+        rrepTimerMsg->setLastTTL(ttlStart);
+        rrepTimerMsg->setFromInvalidEntry(false);
+        rrepTimerMsg->setDestAddr(rreq->getDestAddr());
     }
 
     // Each time, the timeout for receiving a RREP is RING_TRAVERSAL_TIME.
     double ringTraversalTime = 2.0 * nodeTraversalTime * (timeToLive + timeoutBuffer);
-    scheduleAt(simTime() + ringTraversalTime, newRREPTimerMsg);
+    scheduleAt(simTime() + ringTraversalTime, rrepTimerMsg);
 
     EV_INFO << "Sending a Route Request with target " << rreq->getDestAddr() << " and TTL= " << timeToLive << endl;
     sendAODVPacket(rreq, destAddr, timeToLive, par("jitter"));
