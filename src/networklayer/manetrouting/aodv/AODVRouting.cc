@@ -1365,6 +1365,7 @@ AODVRREP* AODVRouting::createHelloMessage()
     //    Lifetime                       ALLOWED_HELLO_LOSS * HELLO_INTERVAL
 
     AODVRREP * helloMessage = new AODVRREP("AODV-HelloMsg");
+    helloMessage->setPacketType(RREP);
     helloMessage->setDestAddr(getSelfIPAddress());
     helloMessage->setDestSeqNum(sequenceNum);
     helloMessage->setHopCount(0);
