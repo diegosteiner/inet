@@ -1418,11 +1418,7 @@ void AODVRouting::handleHelloMessage(AODVRREP* helloMessage)
     {
         AODVRouteData * routeData = dynamic_cast<AODVRouteData *>(routeHelloOriginator->getProtocolData());
         simtime_t lifeTime = routeData->getLifeTime();
-
-        if (newLifeTime < lifeTime)
-            newLifeTime = lifeTime;
-
-        updateRoutingTable(routeHelloOriginator, helloOriginatorAddr, 1, true, latestDestSeqNum, true, newLifeTime);
+        updateRoutingTable(routeHelloOriginator, helloOriginatorAddr, 1, true, latestDestSeqNum, true, std::max(lifeTime, newLifeTime));
     }
 
     // TODO: This feature has not implemented yet.
