@@ -44,8 +44,9 @@ simple AODVRouting
         string interfaceTablePath = default("^.interfaceTable");
         string networkProtocolPath = default("^.networkLayer.ip");
 
-        bool askGratuitousRREP = default(false); // please, see the RFC 3561: 6.6.3
-        bool useHelloMessages = default(false); // please, see the RFC 3561: 6.9
+        bool askGratuitousRREP = default(false); // please, see RFC 3561: 6.6.3
+        bool useHelloMessages = default(true); // please, see RFC 3561: 6.9
+        bool useLocalRepair = default(false); // please, see RFC 3561: 6.12
         int udpPort = default(654);
         // **Note on jitter: An IMPORTANT TODO (or limitiation?)**:
         // Choosing the correct jitter is not trivial and it depends on the network structure and other parameters
@@ -54,7 +55,9 @@ simple AODVRouting
         double jitter @unit("s") = default(uniform(0ms,5ms)); // the delay when we broadcast a control packet
         double helloInterval @unit("s") = default(1s); // every helloInterval seconds a node broadcasts Hello messages (if it is necessary)
         int allowedHelloLoss = default(2); // allowedHelloLoss * helloInterval is the lifetime value for Hello messages
-        double activeRouteTimeout @unit("s") = default(3s); // the timeout value for cached routes
+        double activeRouteTimeout @unit("s") = default(3s); // the timeout value for cached routes If Hello messages are used, then the
+															// ACTIVE_ROUTE_TIMEOUT parameter value MUST be more than the value
+															// (ALLOWED_HELLO_LOSS * HELLO_INTERVAL).
         int netDiameter = default(35); // the maximum possible number of hops between two nodes in the network
         double nodeTraversalTime @unit("s") = default(0.04s); // an estimation of the average one-hop traversal time
         int rerrRatelimit = default(10); // maximum number of RERR messages that the AODV may originate in 1s.
