@@ -1382,7 +1382,25 @@ void AODVRouting::sendHelloMessagesIfNeeded()
     // within the last HELLO_INTERVAL.  If it has not, it MAY broadcast
     // a RREP with TTL = 1
 
-    if (lastBroadcastTime == 0 || simTime() - lastBroadcastTime > helloInterval)
+    // A node SHOULD only use hello messages if it is part of an
+    // active route.
+    bool hasActiveRoute = false;
+
+    for (int i = 0; i < routingTable->getNumRoutes(); i++)
+    {
+        IRoute * route = routingTable->getRoute(i);
+        if (route->getSource() == this)
+        {
+            AODVRouteData * routeData = check_and_cast<AODVRouteData*>(route->getProtocolData());
+            if (routeData->isActive())
+            {
+                hasActiveRoute = true;
+                break;
+            }
+        }
+    }
+
+    if (hasActiveRoute && (lastBroadcastTime == 0 || simTime() - lastBroadcastTime > helloInterval))
     {
         EV_INFO << "It is hello time, broadcasting Hello Messages with TTL=1" << endl;
         AODVRREP * helloMessage = createHelloMessage();
