@@ -79,7 +79,7 @@ void AODVRouting::initialize(int stage)
             helloMsgTimer = new cMessage("HelloMsgTimer");
 
             if (isOperational)
-                scheduleAt(simTime() + helloInterval, helloMsgTimer);
+                scheduleAt(simTime() + helloInterval + uniform(0,1), helloMsgTimer);
         }
 
         expungeTimer = new cMessage("ExpungeTimer");
