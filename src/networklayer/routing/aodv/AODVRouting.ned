@@ -43,7 +43,7 @@ simple AODVRouting
 
         bool askGratuitousRREP = default(false); // please, see RFC 3561: 6.6.3
         bool useHelloMessages = default(true); // please, see RFC 3561: 6.9
-        bool useLocalRepair = default(false); // please, see RFC 3561: 6.12
+        bool useLocalRepair = default(false); // please, see RFC 3561: 6.12 *not implemented yet*
         int udpPort = default(654);
         // **Note on jitter: An IMPORTANT TODO (or limitiation?)**:
         // Choosing the correct jitter is not trivial and it depends on the network structure and other parameters
