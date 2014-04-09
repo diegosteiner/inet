@@ -15,10 +15,7 @@
 // along with this program.  If not, see http://www.gnu.org/licenses/.
 //
 
-package inet.networklayer.manetrouting.aodv;
-
-import inet.applications.IUDPApp;
-
+package inet.networklayer.routing.aodv;
 
 //
 // Ad hoc On-Demand Distance Vector Routing Protocol module.

@@ -15,7 +15,7 @@
 
 package inet.nodes.aodv;
 
-import inet.networklayer.manetrouting.aodv.AODVRouting;
+import inet.networklayer.routing.aodv.AODVRouting;
 import inet.nodes.inet.WirelessHost;
 
 
