@@ -189,7 +189,7 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         void delayDatagram(INetworkDatagram * datagram);
 
         /* Helper functions */
-        Address getSelfIPAddress();
+        Address getSelfIPAddress() const;
         void sendAODVPacket(AODVControlPacket * packet, const Address& destAddr, unsigned int timeToLive, double delay);
         void clearState();
 

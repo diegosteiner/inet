@@ -242,7 +242,7 @@ void AODVRouting::startRouteDiscovery(const Address& target, unsigned timeToLive
     sendRREQ(rreq, addressType->getBroadcastAddress(), timeToLive);
 }
 
-Address AODVRouting::getSelfIPAddress()
+Address AODVRouting::getSelfIPAddress() const
 {
     return routingTable->getRouterIdAsGeneric();
 }
