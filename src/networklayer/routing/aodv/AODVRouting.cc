@@ -592,7 +592,7 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
 
         if (!destRouteData->hasValidDestNum())
         {
-            updateRoutingTable(destRoute, sourceAddr, newHopCount, true, destSeqNum, false, simTime() + lifeTime);
+            updateRoutingTable(destRoute, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
             /*
                If the route table entry to the destination is created or updated,
                then the following actions occur:
