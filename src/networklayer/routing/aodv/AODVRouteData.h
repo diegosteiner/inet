@@ -59,7 +59,7 @@ class INET_API AODVRouteData : public cObject
         bool isActive() const { return active; }
         void setIsActive(bool active) { this->active = active; }
         void addPrecursor(const Address& precursorAddr) { precursorList.push_back(precursorAddr); }
-        const std::vector<Address>& getPrecursorList() { return precursorList; }
+        const std::vector<Address>& getPrecursorList() const { return precursorList; }
 };
 
 inline std::ostream& operator<<(std::ostream& out, const AODVRouteData * data)
