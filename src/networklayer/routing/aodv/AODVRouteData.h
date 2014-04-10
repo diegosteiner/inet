@@ -35,7 +35,15 @@ class INET_API AODVRouteData : public cObject
 
     public:
 
-        AODVRouteData() { destSeqNum = 0; }
+        AODVRouteData()
+        {
+            active = true;
+            repariable = false;
+            beingRepaired = false;
+            validDestNum = true;
+            lifeTime = 0;
+            destSeqNum = 0;
+        }
         virtual ~AODVRouteData() {}
 
         unsigned int getDestSeqNum() const { return destSeqNum; }
