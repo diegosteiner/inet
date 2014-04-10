@@ -1080,17 +1080,18 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
     // 3. The Lifetime field is updated to current time plus DELETE_PERIOD.
     //    Before this time, the entry SHOULD NOT be deleted.
 
-    std::vector<Address> unreachableNeighbors;
-    std::vector<unsigned int> unreachableNeighborsDestSeqNum;
 
     IRoute * unreachableRoute = routingTable->findBestMatchingRoute(unreachableAddr);
 
     if (!unreachableRoute || unreachableRoute->getSource() != this)
         return;
 
+    std::vector<UnreachableNode> unreachableNodes;
     AODVRouteData * unreachableRouteData = check_and_cast<AODVRouteData *>(unreachableRoute->getProtocolData());
-    unreachableNeighbors.push_back(unreachableAddr); // Note that, in spite of this name, we include the unreachableAddr also for the easier implementation
-    unreachableNeighborsDestSeqNum.push_back(unreachableRouteData->getDestSeqNum());
+    UnreachableNode node;
+    node.addr = unreachableAddr;
+    node.seqNum = unreachableRouteData->getDestSeqNum();
+    unreachableNodes.push_back(node);
 
     // For case (i), the node first makes a list of unreachable destinations
     // consisting of the unreachable neighbor and any additional destinations
@@ -1114,9 +1115,10 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
             routeData->setLifeTime(simTime() + deletePeriod);
             scheduleExpungeRoutes();
 
-            // Note that, there is a bijection between unreachableNeighbors and unreachableNeighborsDestSeqNum
-            unreachableNeighbors.push_back(route->getDestinationAsGeneric());
-            unreachableNeighborsDestSeqNum.push_back(routeData->getDestSeqNum());
+            UnreachableNode node;
+            node.addr = route->getDestinationAsGeneric();
+            node.seqNum = routeData->getDestSeqNum();
+            unreachableNodes.push_back(node);
         }
     }
 
@@ -1135,7 +1137,7 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
         return;
     }
 
-    AODVRERR * rerr = createRERR(unreachableNeighbors,unreachableNeighborsDestSeqNum);
+    AODVRERR * rerr = createRERR(unreachableNodes);
     rerrCount++;
 
     // broadcast
@@ -1143,22 +1145,22 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
     sendAODVPacket(rerr, addressType->getBroadcastAddress(), 1, par("jitter"));
 }
 
-AODVRERR* AODVRouting::createRERR(const std::vector<Address>& unreachableNeighbors, const std::vector<unsigned int>& unreachableNeighborsDestSeqNum)
+AODVRERR* AODVRouting::createRERR(const std::vector<UnreachableNode>& unreachableNodes)
 {
     AODVRERR * rerr = new AODVRERR("AODV-RERR");
-    unsigned int destCount = unreachableNeighbors.size();
+    unsigned int destCount = unreachableNodes.size();
 
     rerr->setPacketType(RERR);
     rerr->setDestCount(destCount);
-    rerr->setUnreachableDestAddrsArraySize(destCount);
-    rerr->setUnreachableSeqNumArraySize(destCount);
+    rerr->setUnreachableNodesArraySize(destCount);
 
     for (unsigned int i = 0; i < destCount; i++)
     {
-        rerr->setUnreachableDestAddrs(i, unreachableNeighbors[i]);
-        rerr->setUnreachableSeqNum(i, unreachableNeighborsDestSeqNum[i]);
+        UnreachableNode node;
+        node.addr = unreachableNodes[i].addr;
+        node.seqNum = unreachableNodes[i].seqNum;
+        rerr->setUnreachableNodes(i, node);
     }
-
     return rerr;
 }
 
@@ -1169,9 +1171,8 @@ void AODVRouting::handleRERR(AODVRERR* rerr, const Address& sourceAddr)
     // A node initiates processing for a RERR message in three situations:
     // (iii)   if it receives a RERR from a neighbor for one or more
     //         active routes.
-    unsigned int unreachableArraySize = rerr->getUnreachableDestAddrsArraySize();
-    std::vector<Address> unreachableNeighbors;
-    std::vector<unsigned int> unreachableNeighborsDestSeqNum;
+    unsigned int unreachableArraySize = rerr->getUnreachableNodesArraySize();
+    std::vector<UnreachableNode> unreachableNeighbors;
 
     for (int i = 0; i < routingTable->getNumRoutes(); i++)
     {
@@ -1189,13 +1190,13 @@ void AODVRouting::handleRERR(AODVRERR* rerr, const Address& sourceAddr)
         {
             for (unsigned int j = 0; j < unreachableArraySize; j++)
             {
-                if (route->getDestinationAsGeneric() == rerr->getUnreachableDestAddrs(j))
+                if (route->getDestinationAsGeneric() == rerr->getUnreachableNodes(j).addr)
                 {
                     // 1. The destination sequence number of this routing entry, if it
                     // exists and is valid, is incremented for cases (i) and (ii) above,
                     // ! and copied from the incoming RERR in case (iii) above.
 
-                    routeData->setDestSeqNum(rerr->getUnreachableSeqNum(j));
+                    routeData->setDestSeqNum(rerr->getUnreachableNodes(j).seqNum);
                     routeData->setIsActive(false); // it means invalid, see 3. AODV Terminology p.3. in RFC 3561
                     routeData->setLifeTime(simTime() + deletePeriod);
 
@@ -1205,10 +1206,11 @@ void AODVRouting::handleRERR(AODVRERR* rerr, const Address& sourceAddr)
 
                     if (routeData->getPrecursorList().size() > 0)
                     {
-                        unreachableNeighbors.push_back(route->getDestinationAsGeneric());
-                        unreachableNeighborsDestSeqNum.push_back(routeData->getDestSeqNum());
+                        UnreachableNode node;
+                        node.addr = route->getDestinationAsGeneric();
+                        node.seqNum = routeData->getDestSeqNum();
+                        unreachableNeighbors.push_back(node);
                     }
-
                     scheduleExpungeRoutes();
                 }
             }
@@ -1225,7 +1227,7 @@ void AODVRouting::handleRERR(AODVRERR* rerr, const Address& sourceAddr)
     if (unreachableNeighbors.size() > 0 && (simTime() > rebootTime + deletePeriod || rebootTime == 0))
     {
        EV_INFO << "Sending RERR to inform our neighbors about link breaks." << endl;
-       AODVRERR * newRERR = createRERR(unreachableNeighbors, unreachableNeighborsDestSeqNum);
+       AODVRERR * newRERR = createRERR(unreachableNeighbors);
        sendAODVPacket(newRERR, addressType->getBroadcastAddress(),1,0);
        rerrCount++;
     }
@@ -1609,20 +1611,20 @@ void AODVRouting::sendRERRWhenNoRouteToForward(const Address& unreachableAddr)
         EV_WARN << "A node should not generate more than RERR_RATELIMIT RERR messages per second. Canceling sending RERR" << endl;
         return;
     }
-
-    std::vector<Address> unreachableNeighbors;
-    unreachableNeighbors.push_back(unreachableAddr);
-    std::vector<unsigned int> unreachableNeighborsDestSeqNum;
+    std::vector<UnreachableNode> unreachableNodes;
+    UnreachableNode node;
+    node.addr = unreachableAddr;
 
     IRoute * unreachableRoute = routingTable->findBestMatchingRoute(unreachableAddr);
     AODVRouteData * unreachableRouteData = unreachableRoute ? dynamic_cast<AODVRouteData *>(unreachableRoute->getProtocolData()) : NULL;
 
     if (unreachableRouteData && unreachableRouteData->hasValidDestNum())
-        unreachableNeighborsDestSeqNum.push_back(unreachableRouteData->getDestSeqNum());
+        node.seqNum = unreachableRouteData->getDestSeqNum();
     else
-        unreachableNeighborsDestSeqNum.push_back(0);
+        node.seqNum = 0;
 
-    AODVRERR * rerr = createRERR(unreachableNeighbors, unreachableNeighborsDestSeqNum);
+    unreachableNodes.push_back(node);
+    AODVRERR * rerr = createRERR(unreachableNodes);
 
     rerrCount++;
     EV_INFO << "Broadcasting Route Error message with TTL=1" << endl;

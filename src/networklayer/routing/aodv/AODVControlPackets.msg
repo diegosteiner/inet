@@ -22,6 +22,15 @@ cplusplus {{
 
 class noncobject Address;
 
+//
+// Helper struct to represent (Address, sequence number) pairs in a RERR message
+//
+struct UnreachableNode
+{
+    Address addr;
+    unsigned int seqNum;
+};
+
 enum AODVControlPacketType
 {
     RREQ = 1;
@@ -80,8 +89,7 @@ class AODVRREP extends AODVControlPacket
 class AODVRERR extends AODVControlPacket
 {
     unsigned int packetType = RERR;
-    Address unreachableDestAddrs[];
-    unsigned int unreachableSeqNum[];
+    UnreachableNode unreachableNodes[];
     bool noDeleteFlag;
     unsigned int destCount;
 }

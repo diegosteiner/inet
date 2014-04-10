@@ -35,6 +35,7 @@
  * This class implements AODV routing protocol and Netfilter hooks
  * in the IP-layer with regard to this protocol.
  */
+
 class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INetfilter::IHook, public cListener
 {
     protected:
@@ -149,7 +150,7 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         AODVRREQ * createRREQ(const Address& destAddr);
         AODVRREP * createRREP(AODVRREQ * rreq, IRoute * destRoute, IRoute * originatorRoute, const Address& sourceAddr);
         AODVRREP * createGratuitousRREP(AODVRREQ * rreq, IRoute * originatorRoute);
-        AODVRERR * createRERR(const std::vector<Address>& unreachableNeighbors, const std::vector<unsigned int>& unreachableNeighborsDestSeqNum);
+        AODVRERR * createRERR(const std::vector<UnreachableNode>& unreachableNodes);
 
         /* Control Packet handlers */
         void handleRREP(AODVRREP* rrep, const Address& sourceAddr);
