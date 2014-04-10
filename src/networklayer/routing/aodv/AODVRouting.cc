@@ -593,26 +593,25 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
         if (!destRouteData->hasValidDestNum())
         {
             updateRoutingTable(destRoute, sourceAddr, newHopCount, true, destSeqNum, true, simTime() + lifeTime);
-            /*
-               If the route table entry to the destination is created or updated,
-               then the following actions occur:
 
-               -  the route is marked as active,
-
-               -  the destination sequence number is marked as valid,
-
-               -  the next hop in the route entry is assigned to be the node from
-                  which the RREP is received, which is indicated by the source IP
-                  address field in the IP header,
-
-               -  the hop count is set to the value of the New Hop Count,
-
-               -  the expiry time is set to the current time plus the value of the
-                  Lifetime in the RREP message,
-
-               -  and the destination sequence number is the Destination Sequence
-                  Number in the RREP message.
-             */
+            // If the route table entry to the destination is created or updated,
+            // then the following actions occur:
+            //
+            // -  the route is marked as active,
+            //
+            // -  the destination sequence number is marked as valid,
+            //
+            // -  the next hop in the route entry is assigned to be the node from
+            //    which the RREP is received, which is indicated by the source IP
+            //    address field in the IP header,
+            //
+            // -  the hop count is set to the value of the New Hop Count,
+            //
+            // -  the expiry time is set to the current time plus the value of the
+            //    Lifetime in the RREP message,
+            //
+            // -  and the destination sequence number is the Destination Sequence
+            //    Number in the RREP message.
         }
         // (ii) the Destination Sequence Number in the RREP is greater than
         //      the node's copy of the destination sequence number and the
