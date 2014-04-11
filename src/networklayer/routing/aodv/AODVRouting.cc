@@ -59,7 +59,6 @@ void AODVRouting::initialize(int stage)
         myRouteTimeout = 2.0 * activeRouteTimeout;
         deletePeriod = 5.0 * std::max(activeRouteTimeout, helloInterval);
         blacklistTimeout = rreqRetries * netTraversalTime;
-        maxRepairTTL = 0.3 * netDiameter;
         netTraversalTime = 2.0 * nodeTraversalTime * netDiameter;
         nextHopWait = nodeTraversalTime + 10;
         pathDiscoveryTime = 2.0 * netTraversalTime;
@@ -327,7 +326,7 @@ void AODVRouting::sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned in
     }
 
     // Each time, the timeout for receiving a RREP is RING_TRAVERSAL_TIME.
-    double ringTraversalTime = 2.0 * nodeTraversalTime * (timeToLive + timeoutBuffer);
+    simtime_t ringTraversalTime = 2.0 * nodeTraversalTime * (timeToLive + timeoutBuffer);
     scheduleAt(simTime() + ringTraversalTime, rrepTimerMsg);
 
     EV_INFO << "Sending a Route Request with target " << rreq->getDestAddr() << " and TTL= " << timeToLive << endl;

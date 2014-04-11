@@ -79,8 +79,8 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         bool askGratuitousRREP;
         bool useHelloMessages;
         simtime_t maxJitter;
-        double activeRouteTimeout;
-        double helloInterval;
+        simtime_t activeRouteTimeout;
+        simtime_t helloInterval;
         unsigned int netDiameter;
         unsigned int rreqRetries;
         unsigned int rreqRatelimit;
@@ -90,17 +90,16 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         unsigned int ttlThreshold;
         unsigned int localAddTTL;
         unsigned int allowedHelloLoss;
-        double nodeTraversalTime;
+        simtime_t nodeTraversalTime;
         cPar *jitterPar;
 
         // the following parameters are calculated from the parameters defined above
-        double deletePeriod; // the time after which an expired route is deleted
-        double myRouteTimeout; // the value of the lifetime field that a destination node places in RREPs
-        double blacklistTimeout; // the time after which a blacklisted node is removed from the blacklist
-        double maxRepairTTL; // if the destination was no farther than maxRepairTTL hops away a node may try a local repair
-        double netTraversalTime; // an estimation of the traversal time for the complete network
-        double nextHopWait; // timeout for a RREP-ACK
-        double pathDiscoveryTime; // buffer timeout for each broadcasted RREQ message
+        simtime_t deletePeriod; // the time after which an expired route is deleted
+        simtime_t myRouteTimeout; // the value of the lifetime field that a destination node places in RREPs
+        simtime_t blacklistTimeout; // the time after which a blacklisted node is removed from the blacklist
+        simtime_t netTraversalTime; // an estimation of the traversal time for the complete network
+        simtime_t nextHopWait; // timeout for a RREP-ACK
+        simtime_t pathDiscoveryTime; // buffer timeout for each broadcasted RREQ message
 
         // state
         unsigned int rreqId; // when sending a new RREQ packet, rreqID incremented by one from the last id used by this node
