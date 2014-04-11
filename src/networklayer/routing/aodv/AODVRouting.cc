@@ -20,6 +20,7 @@
 #include "Ieee80211Frame_m.h"
 #include "IPSocket.h"
 #include "UDPControlInfo.h"
+#include "ModuleAccess.h"
 #include "NodeOperations.h"
 
 Define_Module(AODVRouting);
@@ -28,8 +29,8 @@ void AODVRouting::initialize(int stage)
 {
     if (stage == INITSTAGE_LOCAL)
     {
-        lastBroadcastTime = 0;
-        rebootTime = 0;
+        lastBroadcastTime = SIMTIME_ZERO;
+        rebootTime = SIMTIME_ZERO;
         rreqId = sequenceNum = 0;
         rreqCount = rerrCount = 0;
         host = this->getParentModule();

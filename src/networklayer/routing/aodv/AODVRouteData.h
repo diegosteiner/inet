@@ -41,7 +41,7 @@ class INET_API AODVRouteData : public cObject
             repariable = false;
             beingRepaired = false;
             validDestNum = true;
-            lifeTime = 0;
+            lifeTime = SIMTIME_ZERO;
             destSeqNum = 0;
         }
         virtual ~AODVRouteData() {}
