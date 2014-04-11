@@ -64,19 +64,19 @@ class INET_API AODVRouteData : public cObject
 
 inline std::ostream& operator<<(std::ostream& out, const AODVRouteData * data)
 {
-    out << " isActive = " << data->isActive();
-    out << ", hasValidDestNum = " << data->hasValidDestNum();
-    out << ", destNum = " << data->getDestSeqNum();
-    out << ", lifetime = " << data->getLifeTime();
+    out << " isActive = " << data->isActive()
+        << ", hasValidDestNum = " << data->hasValidDestNum()
+        << ", destNum = " << data->getDestSeqNum()
+        << ", lifetime = " << data->getLifeTime();
 
-    std::set<Address> preList = data->getPrecursorList();
+    const std::set<Address> &preList = data->getPrecursorList();
 
-    if (preList.size() > 0)
+    if (!preList.empty())
     {
         out << ", precursor list: ";
-        std::set<Address>::iterator iter = preList.begin();
+        std::set<Address>::const_iterator iter = preList.begin();
         out << *iter;
-        for (iter++; iter != preList.end(); iter++)
+        for (++iter; iter != preList.end(); ++iter)
             out << "; " << *iter;
     }
     return out;
