@@ -1,9 +1,9 @@
 # workingdir,                        args,                                          simtimelimit,    fingerprint
-/examples/manetrouting/aodv/,    -f omnetpp.ini -c IPv4SlowMobility -r 0,                50s,           04ec-9959
-/examples/manetrouting/aodv/,    -f omnetpp.ini -c IPv4ModerateFastMobility -r 0,                50s,           9795-2ee9
-/examples/manetrouting/aodv/,    -f omnetpp.ini -c IPv4FastMobility -r 0,                50s,           56f2-9dc0
-/examples/manetrouting/aodv/,    -f omnetpp.ini -c StaticIPv4 -r 0,                50s,           db42-9d00
-/examples/manetrouting/aodv/,    -f omnetpp.ini -c Dynamic -r 0,                60s,           8aa3-dd57
+/examples/aodv/,                     -f omnetpp.ini -c IPv4SlowMobility -r 0,          50s,           1c3a-f0a8
+/examples/aodv/,                     -f omnetpp.ini -c IPv4ModerateFastMobility -r 0,  50s,           072c-3933
+/examples/aodv/,                     -f omnetpp.ini -c IPv4FastMobility -r 0,          50s,           4a82-8a3c
+/examples/aodv/,                     -f omnetpp.ini -c StaticIPv4 -r 0,                50s,           a1f5-4d3d
+/examples/aodv/,                     -f omnetpp.ini -c Dynamic -r 0,                   60s,           1348-1261
 /examples/manetrouting/fg80211/ini/, -f Mob_DSR_omnetpp.ini -c General -r 0,        100s,            2c53-5731
 /examples/manetrouting/fg80211/,     -f omnetpp.ini -c General -r 0,                100s,            3953-c4e3
 /examples/manetrouting/fg80211/,     -f omnetpp.ini -c DYMOUM -r 0,                 100s,            9e9c-0b40
