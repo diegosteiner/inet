@@ -53,6 +53,7 @@ void AODVRouting::initialize(int stage)
         ttlIncrement = par("ttlIncrement");
         ttlThreshold = par("ttlThreshold");
         localAddTTL = par("localAddTTL");
+        jitterPar = &par("jitter");
 
         myRouteTimeout = 2.0 * activeRouteTimeout;
         deletePeriod = 5.0 * std::max(activeRouteTimeout, helloInterval);
@@ -226,6 +227,7 @@ AODVRouting::AODVRouting()
     expungeTimer = NULL;
     blacklistTimer = NULL;
     rrepAckTimer = NULL;
+    jitterPar = NULL;
 }
 
 bool AODVRouting::hasOngoingRouteDiscovery(const Address& target)
@@ -328,7 +330,7 @@ void AODVRouting::sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned in
     scheduleAt(simTime() + ringTraversalTime, rrepTimerMsg);
 
     EV_INFO << "Sending a Route Request with target " << rreq->getDestAddr() << " and TTL= " << timeToLive << endl;
-    sendAODVPacket(rreq, destAddr, timeToLive, par("jitter"));
+    sendAODVPacket(rreq, destAddr, timeToLive, jitterPar->doubleValue());
     rreqCount++;
 }
 
@@ -1141,7 +1143,7 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
 
     // broadcast
     EV_INFO << "Broadcasting Route Error message with TTL=1" << endl;
-    sendAODVPacket(rerr, addressType->getBroadcastAddress(), 1, par("jitter"));
+    sendAODVPacket(rerr, addressType->getBroadcastAddress(), 1, jitterPar->doubleValue());
 }
 
 AODVRERR* AODVRouting::createRERR(const std::vector<UnreachableNode>& unreachableNodes)
@@ -1313,7 +1315,7 @@ void AODVRouting::forwardRREP(AODVRREP* rrep, const Address& destAddr, unsigned 
 void AODVRouting::forwardRREQ(AODVRREQ* rreq, unsigned int timeToLive)
 {
     EV_INFO << "Broadcasting the Route Request message with TTL= " << timeToLive << endl;
-    sendAODVPacket(rreq, addressType->getBroadcastAddress(), timeToLive,par("jitter"));
+    sendAODVPacket(rreq, addressType->getBroadcastAddress(), timeToLive,jitterPar->doubleValue());
 }
 
 void AODVRouting::completeRouteDiscovery(const Address& target)
@@ -1405,7 +1407,7 @@ void AODVRouting::sendHelloMessagesIfNeeded()
     {
         EV_INFO << "It is hello time, broadcasting Hello Messages with TTL=1" << endl;
         AODVRREP * helloMessage = createHelloMessage();
-        sendAODVPacket(helloMessage, addressType->getBroadcastAddress(), 1, par("jitter"));
+        sendAODVPacket(helloMessage, addressType->getBroadcastAddress(), 1, jitterPar->doubleValue());
     }
 
     scheduleAt(simTime() + helloInterval, helloMsgTimer);
@@ -1627,7 +1629,7 @@ void AODVRouting::sendRERRWhenNoRouteToForward(const Address& unreachableAddr)
 
     rerrCount++;
     EV_INFO << "Broadcasting Route Error message with TTL=1" << endl;
-    sendAODVPacket(rerr, addressType->getBroadcastAddress(), 1, par("jitter")); // TODO: unicast if there exists a route to the source
+    sendAODVPacket(rerr, addressType->getBroadcastAddress(), 1, jitterPar->doubleValue()); // TODO: unicast if there exists a route to the source
 }
 
 void AODVRouting::cancelRouteDiscovery(const Address& destAddr)

@@ -91,6 +91,7 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         unsigned int localAddTTL;
         unsigned int allowedHelloLoss;
         double nodeTraversalTime;
+        cPar *jitterPar;
 
         // the following parameters are calculated from the parameters defined above
         double deletePeriod; // the time after which an expired route is deleted
