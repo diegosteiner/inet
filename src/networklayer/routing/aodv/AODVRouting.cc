@@ -34,9 +34,9 @@ void AODVRouting::initialize(int stage)
         rreqId = sequenceNum = 0;
         rreqCount = rerrCount = 0;
         host = this->getParentModule();
-        routingTable = check_and_cast<IRoutingTable *>(getModuleByPath(par("routingTablePath")));
-        interfaceTable = check_and_cast<IInterfaceTable *>(getModuleByPath(par("interfaceTablePath")));
-        networkProtocol = check_and_cast<INetfilter *>(getModuleByPath(par("networkProtocolPath")));
+        routingTable = getModuleFromPar<IRoutingTable>(par("routingTableModule"), this);
+        interfaceTable = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
+        networkProtocol = getModuleFromPar<INetfilter>(par("networkProtocolModule"), this);
 
         aodvUDPPort = par("udpPort");
         askGratuitousRREP = par("askGratuitousRREP");
