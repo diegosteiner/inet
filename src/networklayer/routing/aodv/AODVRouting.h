@@ -33,7 +33,7 @@
 
 /*
  * This class implements AODV routing protocol and Netfilter hooks
- * in the IP-layer with regard to this protocol.
+ * in the IP-layer required by this protocol.
  */
 
 class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INetfilter::IHook, public cListener
@@ -73,7 +73,7 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         IInterfaceTable *interfaceTable;
         INetfilter *networkProtocol;
 
-        // AODV parameters: the following parameters are configurable, see the NED file for more infos.
+        // AODV parameters: the following parameters are configurable, see the NED file for more info.
         unsigned int rerrRatelimit;
         unsigned int aodvUDPPort;
         bool askGratuitousRREP;
@@ -104,13 +104,13 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         // state
         unsigned int rreqId; // when sending a new RREQ packet, rreqID incremented by one from the last id used by this node
         unsigned int sequenceNum; // it helps to prevent loops in the routes (RFC 3561 6.1 p11.)
-        std::map<Address, WaitForRREP *> waitForRREPTimers; // timeout for a Route Replies
+        std::map<Address, WaitForRREP *> waitForRREPTimers; // timeout for Route Replies
         std::map<RREQIdentifier, simtime_t, RREQIdentifierCompare> rreqsArrivalTime; // maps RREQ id to its arriving time
         Address failedNextHop; // next hop to the destination who failed to send us RREP-ACK
         std::map<Address, simtime_t> blacklist; // we don't accept RREQs from blacklisted nodes
         unsigned int rerrCount; // num of originated RERR in the last second
         unsigned int rreqCount; // num of originated RREQ in the last second
-        simtime_t lastBroadcastTime; // the last time when any control packet broadcasted
+        simtime_t lastBroadcastTime; // the last time when any control packet was broadcasted
 
         // self messages
         cMessage *helloMsgTimer; // timer to send hello messages (only if the feature is enabled)
@@ -138,42 +138,42 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         void cancelRouteDiscovery(const Address& destAddr);
 
         /* Routing Table management */
-        void updateRoutingTable(IRoute * route, const Address& nextHop, unsigned int hopCount, bool hasValidDestNum, unsigned int destSeqNum, bool isActive, simtime_t lifeTime);
-        IRoute * createRoute(const Address& destAddr, const Address& nextHop, unsigned int hopCount, bool hasValidDestNum, unsigned int destSeqNum, bool isActive, simtime_t lifeTime);
+        void updateRoutingTable(IRoute *route, const Address& nextHop, unsigned int hopCount, bool hasValidDestNum, unsigned int destSeqNum, bool isActive, simtime_t lifeTime);
+        IRoute *createRoute(const Address& destAddr, const Address& nextHop, unsigned int hopCount, bool hasValidDestNum, unsigned int destSeqNum, bool isActive, simtime_t lifeTime);
         bool updateValidRouteLifeTime(const Address& destAddr, simtime_t lifetime);
         void scheduleExpungeRoutes();
         void expungeRoutes();
 
         /* Control packet creators */
-        AODVRREPACK * createRREPACK();
-        AODVRREP * createHelloMessage();
-        AODVRREQ * createRREQ(const Address& destAddr);
-        AODVRREP * createRREP(AODVRREQ * rreq, IRoute * destRoute, IRoute * originatorRoute, const Address& sourceAddr);
-        AODVRREP * createGratuitousRREP(AODVRREQ * rreq, IRoute * originatorRoute);
-        AODVRERR * createRERR(const std::vector<UnreachableNode>& unreachableNodes);
+        AODVRREPACK *createRREPACK();
+        AODVRREP *createHelloMessage();
+        AODVRREQ *createRREQ(const Address& destAddr);
+        AODVRREP *createRREP(AODVRREQ *rreq, IRoute *destRoute, IRoute *originatorRoute, const Address& sourceAddr);
+        AODVRREP *createGratuitousRREP(AODVRREQ *rreq, IRoute *originatorRoute);
+        AODVRERR *createRERR(const std::vector<UnreachableNode>& unreachableNodes);
 
         /* Control Packet handlers */
-        void handleRREP(AODVRREP* rrep, const Address& sourceAddr);
-        void handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned int timeToLive);
-        void handleRERR(AODVRERR* rerr, const Address& sourceAddr);
-        void handleHelloMessage(AODVRREP * helloMessage);
-        void handleRREPACK(AODVRREPACK * rrepACK, const Address& neighborAddr);
+        void handleRREP(AODVRREP *rrep, const Address& sourceAddr);
+        void handleRREQ(AODVRREQ *rreq, const Address& sourceAddr, unsigned int timeToLive);
+        void handleRERR(AODVRERR *rerr, const Address& sourceAddr);
+        void handleHelloMessage(AODVRREP *helloMessage);
+        void handleRREPACK(AODVRREPACK *rrepACK, const Address& neighborAddr);
 
         /* Control Packet sender methods */
-        void sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned int timeToLive);
-        void sendRREPACK(AODVRREPACK * rrepACK, const Address& destAddr);
-        void sendRREP(AODVRREP * rrep, const Address& destAddr, unsigned int timeToLive);
-        void sendGRREP(AODVRREP * grrep, const Address& destAddr, unsigned int timeToLive);
+        void sendRREQ(AODVRREQ *rreq, const Address& destAddr, unsigned int timeToLive);
+        void sendRREPACK(AODVRREPACK *rrepACK, const Address& destAddr);
+        void sendRREP(AODVRREP *rrep, const Address& destAddr, unsigned int timeToLive);
+        void sendGRREP(AODVRREP *grrep, const Address& destAddr, unsigned int timeToLive);
 
         /* Control Packet forwarders */
-        void forwardRREP(AODVRREP * rrep, const Address& destAddr, unsigned int timeToLive);
-        void forwardRREQ(AODVRREQ * rreq, unsigned int timeToLive);
+        void forwardRREP(AODVRREP *rrep, const Address& destAddr, unsigned int timeToLive);
+        void forwardRREQ(AODVRREQ *rreq, unsigned int timeToLive);
 
         /* Self message handlers */
         void handleRREPACKTimer();
         void handleBlackListTimer();
         void sendHelloMessagesIfNeeded();
-        void handleWaitForRREP(WaitForRREP * rrepTimer);
+        void handleWaitForRREP(WaitForRREP *rrepTimer);
 
         /* General functions to handle route errors */
         void sendRERRWhenNoRouteToForward(const Address& unreachableAddr);
@@ -181,21 +181,21 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         virtual void receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj);
 
         /* Netfilter hooks */
-        Result ensureRouteForDatagram(INetworkDatagram * datagram);
-        virtual Result datagramPreRoutingHook(INetworkDatagram * datagram, const InterfaceEntry * inputInterfaceEntry, const InterfaceEntry *& outputInterfaceEntry, Address & nextHopAddress) { Enter_Method("datagramPreRoutingHook"); return ensureRouteForDatagram(datagram); }
-        virtual Result datagramForwardHook(INetworkDatagram * datagram, const InterfaceEntry * inputInterfaceEntry, const InterfaceEntry *& outputInterfaceEntry, Address & nextHopAddress);
-        virtual Result datagramPostRoutingHook(INetworkDatagram * datagram, const InterfaceEntry * inputInterfaceEntry, const InterfaceEntry *& outputInterfaceEntry, Address & nextHopAddress) { return ACCEPT; }
-        virtual Result datagramLocalInHook(INetworkDatagram * datagram, const InterfaceEntry * inputInterfaceEntry) { return ACCEPT; }
-        virtual Result datagramLocalOutHook(INetworkDatagram * datagram, const InterfaceEntry *& outputInterfaceEntry, Address & nextHopAddress) { Enter_Method("datagramLocalOutHook"); return ensureRouteForDatagram(datagram); }
-        void delayDatagram(INetworkDatagram * datagram);
+        Result ensureRouteForDatagram(INetworkDatagram *datagram);
+        virtual Result datagramPreRoutingHook(INetworkDatagram *datagram, const InterfaceEntry *inputInterfaceEntry, const InterfaceEntry *& outputInterfaceEntry, Address & nextHopAddress) { Enter_Method("datagramPreRoutingHook"); return ensureRouteForDatagram(datagram); }
+        virtual Result datagramForwardHook(INetworkDatagram *datagram, const InterfaceEntry *inputInterfaceEntry, const InterfaceEntry *& outputInterfaceEntry, Address & nextHopAddress);
+        virtual Result datagramPostRoutingHook(INetworkDatagram *datagram, const InterfaceEntry *inputInterfaceEntry, const InterfaceEntry *& outputInterfaceEntry, Address & nextHopAddress) { return ACCEPT; }
+        virtual Result datagramLocalInHook(INetworkDatagram *datagram, const InterfaceEntry *inputInterfaceEntry) { return ACCEPT; }
+        virtual Result datagramLocalOutHook(INetworkDatagram *datagram, const InterfaceEntry *& outputInterfaceEntry, Address & nextHopAddress) { Enter_Method("datagramLocalOutHook"); return ensureRouteForDatagram(datagram); }
+        void delayDatagram(INetworkDatagram *datagram);
 
         /* Helper functions */
         Address getSelfIPAddress() const;
-        void sendAODVPacket(AODVControlPacket * packet, const Address& destAddr, unsigned int timeToLive, double delay);
+        void sendAODVPacket(AODVControlPacket *packet, const Address& destAddr, unsigned int timeToLive, double delay);
         void clearState();
 
         /* Lifecycle */
-        virtual bool handleOperationStage(LifecycleOperation * operation, int stage, IDoneCallback * doneCallback);
+        virtual bool handleOperationStage(LifecycleOperation *operation, int stage, IDoneCallback *doneCallback);
 
     public:
         AODVRouting();

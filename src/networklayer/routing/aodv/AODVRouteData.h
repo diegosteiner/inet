@@ -62,6 +62,6 @@ class INET_API AODVRouteData : public cObject
         const std::set<Address>& getPrecursorList() const { return precursorList; }
 };
 
-std::ostream& operator<<(std::ostream& out, const AODVRouteData * data);
+std::ostream& operator<<(std::ostream& out, const AODVRouteData *data);
 
 #endif

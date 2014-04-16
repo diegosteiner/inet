@@ -127,9 +127,9 @@ void AODVRouting::handleMessage(cMessage *msg)
     }
     else
     {
-        UDPPacket * udpPacket = dynamic_cast<UDPPacket *>(msg);
+        UDPPacket *udpPacket = dynamic_cast<UDPPacket *>(msg);
         AODVControlPacket *ctrlPacket = check_and_cast<AODVControlPacket *>(udpPacket->decapsulate());
-        INetworkProtocolControlInfo * udpProtocolCtrlInfo = dynamic_cast<INetworkProtocolControlInfo *>(udpPacket->getControlInfo());
+        INetworkProtocolControlInfo *udpProtocolCtrlInfo = dynamic_cast<INetworkProtocolControlInfo *>(udpPacket->getControlInfo());
         ASSERT(udpProtocolCtrlInfo != NULL);
         Address sourceAddr = udpProtocolCtrlInfo->getSourceAddress();
         unsigned int arrivalPacketTTL = udpProtocolCtrlInfo->getHopLimit();
@@ -155,7 +155,7 @@ void AODVRouting::handleMessage(cMessage *msg)
     }
 }
 
-INetfilter::IHook::Result AODVRouting::ensureRouteForDatagram(INetworkDatagram * datagram)
+INetfilter::IHook::Result AODVRouting::ensureRouteForDatagram(INetworkDatagram *datagram)
 {
     Enter_Method("datagramPreRoutingHook");
     const Address& destAddr = datagram->getDestinationAddress();
@@ -166,8 +166,8 @@ INetfilter::IHook::Result AODVRouting::ensureRouteForDatagram(INetworkDatagram *
     else
     {
         EV_INFO << "Finding route for source " << sourceAddr << " with destination " << destAddr << endl;
-        IRoute* route = routingTable->findBestMatchingRoute(destAddr);
-        AODVRouteData* routeData = route ? dynamic_cast<AODVRouteData *>(route->getProtocolData()) : NULL;
+        IRoute *route = routingTable->findBestMatchingRoute(destAddr);
+        AODVRouteData *routeData = route ? dynamic_cast<AODVRouteData *>(route->getProtocolData()) : NULL;
         bool isActive = routeData && routeData->isActive();
         if (isActive && !route->getNextHopAsGeneric().isUnspecified())
         {
@@ -240,7 +240,7 @@ void AODVRouting::startRouteDiscovery(const Address& target, unsigned timeToLive
 
     EV_INFO << "Starting route discovery with originator " << getSelfIPAddress() << " and destination " << target << endl;
     ASSERT(!hasOngoingRouteDiscovery(target));
-    AODVRREQ * rreq = createRREQ(target);
+    AODVRREQ *rreq = createRREQ(target);
     sendRREQ(rreq, addressType->getBroadcastAddress(), timeToLive);
 }
 
@@ -249,14 +249,14 @@ Address AODVRouting::getSelfIPAddress() const
     return routingTable->getRouterIdAsGeneric();
 }
 
-void AODVRouting::delayDatagram(INetworkDatagram* datagram)
+void AODVRouting::delayDatagram(INetworkDatagram *datagram)
 {
     EV_DETAIL << "Queuing datagram, source " << datagram->getSourceAddress() << ", destination " << datagram->getDestinationAddress() << endl;
     const Address& target = datagram->getDestinationAddress();
     targetAddressToDelayedPackets.insert(std::pair<Address, INetworkDatagram *>(target, datagram));
 }
 
-void AODVRouting::sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned int timeToLive)
+void AODVRouting::sendRREQ(AODVRREQ *rreq, const Address& destAddr, unsigned int timeToLive)
 {
     // In an expanding ring search, the originating node initially uses a TTL =
     // TTL_START in the RREQ packet IP header and sets the timeout for
@@ -277,7 +277,7 @@ void AODVRouting::sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned in
     }
 
     std::map<Address, WaitForRREP *>::iterator rrepTimer = waitForRREPTimers.find(rreq->getDestAddr());
-    WaitForRREP * rrepTimerMsg = NULL;
+    WaitForRREP *rrepTimerMsg = NULL;
     if (rrepTimer != waitForRREPTimers.end())
     {
         rrepTimerMsg = rrepTimer->second;
@@ -334,7 +334,7 @@ void AODVRouting::sendRREQ(AODVRREQ * rreq, const Address& destAddr, unsigned in
     rreqCount++;
 }
 
-void AODVRouting::sendRREP(AODVRREP * rrep, const Address& destAddr, unsigned int timeToLive)
+void AODVRouting::sendRREP(AODVRREP *rrep, const Address& destAddr, unsigned int timeToLive)
 {
     EV_INFO << "Sending Route Reply to " << destAddr << endl;
 
@@ -342,9 +342,9 @@ void AODVRouting::sendRREP(AODVRREP * rrep, const Address& destAddr, unsigned in
     // corresponding destination node is updated by adding to it
     // the next hop node to which the RREP is forwarded.
 
-    IRoute * destRoute = routingTable->findBestMatchingRoute(destAddr);
+    IRoute *destRoute = routingTable->findBestMatchingRoute(destAddr);
     const Address& nextHop = destRoute->getNextHopAsGeneric();
-    AODVRouteData * destRouteData = check_and_cast<AODVRouteData *>(destRoute->getProtocolData());
+    AODVRouteData *destRouteData = check_and_cast<AODVRouteData *>(destRoute->getProtocolData());
     destRouteData->addPrecursor(nextHop);
 
     // The node we received the Route Request for is our neighbor,
@@ -370,7 +370,7 @@ void AODVRouting::sendRREP(AODVRREP * rrep, const Address& destAddr, unsigned in
     sendAODVPacket(rrep, nextHop, timeToLive, 0);
 }
 
-AODVRREQ * AODVRouting::createRREQ(const Address& destAddr)
+AODVRREQ *AODVRouting::createRREQ(const Address& destAddr)
 {
     AODVRREQ *rreqPacket = new AODVRREQ("AODV-RREQ");
 
@@ -392,7 +392,7 @@ AODVRREQ * AODVRouting::createRREQ(const Address& destAddr)
         // known destination sequence number for this destination and is copied
         // from the Destination Sequence Number field in the routing table.
 
-        AODVRouteData * routeData = check_and_cast<AODVRouteData *>(lastKnownRoute->getProtocolData());
+        AODVRouteData *routeData = check_and_cast<AODVRouteData *>(lastKnownRoute->getProtocolData());
         if (routeData && routeData->hasValidDestNum())
         {
             rreqPacket->setDestSeqNum(routeData->getDestSeqNum());
@@ -428,7 +428,7 @@ AODVRREQ * AODVRouting::createRREQ(const Address& destAddr)
     return rreqPacket;
 }
 
-AODVRREP* AODVRouting::createRREP(AODVRREQ * rreq, IRoute * destRoute, IRoute * originatorRoute, const Address& lastHopAddr)
+AODVRREP *AODVRouting::createRREP(AODVRREQ *rreq, IRoute *destRoute, IRoute *originatorRoute, const Address& lastHopAddr)
 {
     AODVRREP *rrep = new AODVRREP("AODV-RREP");
     rrep->setPacketType(RREP);
@@ -476,8 +476,8 @@ AODVRREP* AODVRouting::createRREP(AODVRREQ * rreq, IRoute * destRoute, IRoute * 
     {
         // it copies its known sequence number for the destination into
         // the Destination Sequence Number field in the RREP message.
-        AODVRouteData * destRouteData = check_and_cast<AODVRouteData *>(destRoute->getProtocolData());
-        AODVRouteData * originatorRouteData = check_and_cast<AODVRouteData*>(originatorRoute->getProtocolData());
+        AODVRouteData *destRouteData = check_and_cast<AODVRouteData *>(destRoute->getProtocolData());
+        AODVRouteData *originatorRouteData = check_and_cast<AODVRouteData*>(originatorRoute->getProtocolData());
         rrep->setDestSeqNum(destRouteData->getDestSeqNum());
 
         // The intermediate node updates the forward route entry by placing the
@@ -509,11 +509,11 @@ AODVRREP* AODVRouting::createRREP(AODVRREQ * rreq, IRoute * destRoute, IRoute * 
     return rrep;
 }
 
-AODVRREP* AODVRouting::createGratuitousRREP(AODVRREQ* rreq, IRoute* originatorRoute)
+AODVRREP *AODVRouting::createGratuitousRREP(AODVRREQ *rreq, IRoute *originatorRoute)
 {
     ASSERT(originatorRoute != NULL);
     AODVRREP *grrep = new AODVRREP("AODV-GRREP");
-    AODVRouteData * routeData = check_and_cast<AODVRouteData *>(originatorRoute->getProtocolData());
+    AODVRouteData *routeData = check_and_cast<AODVRouteData *>(originatorRoute->getProtocolData());
 
     // Hop Count                        The Hop Count as indicated in the
     //                                  node's route table entry for the
@@ -543,7 +543,7 @@ AODVRREP* AODVRouting::createGratuitousRREP(AODVRREQ* rreq, IRoute* originatorRo
 }
 
 
-void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
+void AODVRouting::handleRREP(AODVRREP *rrep, const Address& sourceAddr)
 {
     EV_INFO << "AODV Route Reply arrived with source addr: " << sourceAddr << " originator addr: " << rrep->getOriginatorAddr()
             << " destination addr: " << rrep->getDestAddr() << endl;
@@ -561,7 +561,7 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
     // If needed, a route is created for the previous hop,
     // but without a valid sequence number (see section 6.2)
 
-    IRoute * previousHopRoute = routingTable->findBestMatchingRoute(sourceAddr);
+    IRoute *previousHopRoute = routingTable->findBestMatchingRoute(sourceAddr);
 
     if (!previousHopRoute || previousHopRoute->getSource() != this)
     {
@@ -579,8 +579,8 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
     // Then the forward route for this destination is created if it does not
     // already exist.
 
-    IRoute * destRoute = routingTable->findBestMatchingRoute(rrep->getDestAddr());
-    AODVRouteData * destRouteData = NULL;
+    IRoute *destRoute = routingTable->findBestMatchingRoute(rrep->getDestAddr());
+    AODVRouteData *destRouteData = NULL;
     simtime_t lifeTime = rrep->getLifeTime();
     unsigned int destSeqNum = rrep->getDestSeqNum();
 
@@ -651,7 +651,7 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
     // packet, and then forwards the RREP towards the originator using the
     // information in that route table entry.
 
-    IRoute * originatorRoute = routingTable->findBestMatchingRoute(rrep->getOriginatorAddr());
+    IRoute *originatorRoute = routingTable->findBestMatchingRoute(rrep->getOriginatorAddr());
     if (getSelfIPAddress() != rrep->getOriginatorAddr())
     {
         // If a node forwards a RREP over a link that is likely to have errors or
@@ -661,7 +661,7 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
 
         if (originatorRoute && originatorRoute->getSource() == this)
         {
-            AODVRouteData * originatorRouteData = check_and_cast<AODVRouteData *>(originatorRoute->getProtocolData());
+            AODVRouteData *originatorRouteData = check_and_cast<AODVRouteData *>(originatorRoute->getProtocolData());
 
             // Also, at each node the (reverse) route used to forward a
             // RREP has its lifetime changed to be the maximum of (existing-
@@ -679,7 +679,7 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
 
                 if (rrep->getAckRequiredFlag())
                 {
-                    AODVRREPACK * rrepACK = createRREPACK();
+                    AODVRREPACK *rrepACK = createRREPACK();
                     sendRREPACK(rrepACK, sourceAddr);
                     rrep->setAckRequiredFlag(false);
                 }
@@ -694,12 +694,12 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
                 // destination is updated to contain the next hop towards the
                 // source (originator).
 
-                IRoute * nextHopToDestRoute = routingTable->findBestMatchingRoute(destRoute->getNextHopAsGeneric());
+                IRoute *nextHopToDestRoute = routingTable->findBestMatchingRoute(destRoute->getNextHopAsGeneric());
                 ASSERT(nextHopToDestRoute);
-                AODVRouteData * nextHopToDestRouteData = check_and_cast<AODVRouteData*>(nextHopToDestRoute->getProtocolData());
+                AODVRouteData *nextHopToDestRouteData = check_and_cast<AODVRouteData*>(nextHopToDestRoute->getProtocolData());
                 nextHopToDestRouteData->addPrecursor(originatorRoute->getNextHopAsGeneric());
 
-                AODVRREP * outgoingRREP = rrep->dup();
+                AODVRREP *outgoingRREP = rrep->dup();
                 forwardRREP(outgoingRREP, originatorRoute->getNextHopAsGeneric(), 100);
             }
         }
@@ -718,14 +718,14 @@ void AODVRouting::handleRREP(AODVRREP* rrep, const Address& sourceAddr)
 
     delete rrep;
 }
-void AODVRouting::updateRoutingTable(IRoute * route, const Address& nextHop, unsigned int hopCount, bool hasValidDestNum, unsigned int destSeqNum, bool isActive, simtime_t lifeTime)
+void AODVRouting::updateRoutingTable(IRoute *route, const Address& nextHop, unsigned int hopCount, bool hasValidDestNum, unsigned int destSeqNum, bool isActive, simtime_t lifeTime)
 {
     EV_INFO << "Updating existing route: " << route << endl;
 
     route->setNextHop(nextHop);
     route->setMetric(hopCount);
 
-    AODVRouteData * routingData = check_and_cast<AODVRouteData *>(route->getProtocolData());
+    AODVRouteData *routingData = check_and_cast<AODVRouteData *>(route->getProtocolData());
     ASSERT(routingData != NULL);
 
     routingData->setLifeTime(lifeTime);
@@ -738,12 +738,12 @@ void AODVRouting::updateRoutingTable(IRoute * route, const Address& nextHop, uns
     scheduleExpungeRoutes();
 }
 
-void AODVRouting::sendAODVPacket(AODVControlPacket* packet, const Address& destAddr, unsigned int timeToLive, double delay)
+void AODVRouting::sendAODVPacket(AODVControlPacket *packet, const Address& destAddr, unsigned int timeToLive, double delay)
 {
 
     ASSERT(timeToLive != 0);
 
-    INetworkProtocolControlInfo * networkProtocolControlInfo = addressType->createNetworkProtocolControlInfo();
+    INetworkProtocolControlInfo *networkProtocolControlInfo = addressType->createNetworkProtocolControlInfo();
 
     networkProtocolControlInfo->setHopLimit(timeToLive);
 
@@ -752,10 +752,10 @@ void AODVRouting::sendAODVPacket(AODVControlPacket* packet, const Address& destA
     networkProtocolControlInfo->setSourceAddress(getSelfIPAddress());
 
     // TODO: Implement: support for multiple interfaces
-    InterfaceEntry * ifEntry = interfaceTable->getInterfaceByName("wlan0");
+    InterfaceEntry *ifEntry = interfaceTable->getInterfaceByName("wlan0");
     networkProtocolControlInfo->setInterfaceId(ifEntry->getInterfaceId());
 
-    UDPPacket * udpPacket = new UDPPacket(packet->getName());
+    UDPPacket *udpPacket = new UDPPacket(packet->getName());
     udpPacket->encapsulate(packet);
     udpPacket->setSourcePort(aodvUDPPort);
     udpPacket->setDestinationPort(aodvUDPPort);
@@ -770,7 +770,7 @@ void AODVRouting::sendAODVPacket(AODVControlPacket* packet, const Address& destA
         sendDelayed(udpPacket, delay, "ipOut");
 }
 
-void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned int timeToLive)
+void AODVRouting::handleRREQ(AODVRREQ *rreq, const Address& sourceAddr, unsigned int timeToLive)
 {
     EV_INFO << "AODV Route Request arrived with source addr: " << sourceAddr << " originator addr: " << rreq->getOriginatorAddr()
             << " destination addr: " << rreq->getDestAddr() << endl;
@@ -788,7 +788,7 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
     // When a node receives a RREQ, it first creates or updates a route to
     // the previous hop without a valid sequence number (see section 6.2).
 
-    IRoute * previousHopRoute = routingTable->findBestMatchingRoute(sourceAddr);
+    IRoute *previousHopRoute = routingTable->findBestMatchingRoute(sourceAddr);
 
     if (!previousHopRoute || previousHopRoute->getSource() != this)
     {
@@ -823,7 +823,7 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
     // Then the node searches for a reverse route to the Originator IP Address (see
     // section 6.2), using longest-prefix matching.
 
-    IRoute * reverseRoute = routingTable->findBestMatchingRoute(rreq->getOriginatorAddr());
+    IRoute *reverseRoute = routingTable->findBestMatchingRoute(rreq->getOriginatorAddr());
 
     // If need be, the route is created, or updated using the Originator Sequence Number from the
     // RREQ in its routing table.
@@ -862,7 +862,7 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
     }
     else
     {
-        AODVRouteData * routeData = check_and_cast<AODVRouteData*>(reverseRoute->getProtocolData());
+        AODVRouteData *routeData = check_and_cast<AODVRouteData*>(reverseRoute->getProtocolData());
         int routeSeqNum = routeData->getDestSeqNum();
         int newSeqNum = std::max(routeSeqNum, rreqSeqNum);
         int newHopCount = rreq->getHopCount(); // Note: already incremented by 1.
@@ -902,8 +902,8 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
     // node returns a RREP to the originating node, it MUST also unicast a
     // gratuitous RREP to the destination node.
 
-    IRoute * destRoute = routingTable->findBestMatchingRoute(rreq->getDestAddr());
-    AODVRouteData * destRouteData = destRoute ? dynamic_cast<AODVRouteData *>(destRoute->getProtocolData()) : NULL;
+    IRoute *destRoute = routingTable->findBestMatchingRoute(rreq->getDestAddr());
+    AODVRouteData *destRouteData = destRoute ? dynamic_cast<AODVRouteData *>(destRoute->getProtocolData()) : NULL;
 
     // check (i)
     if (rreq->getDestAddr() == getSelfIPAddress())
@@ -911,7 +911,7 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
         EV_INFO << "I am the destination node for which the route was requested" << endl;
 
         // create RREP
-        AODVRREP * rrep = createRREP(rreq, destRoute, reverseRoute, sourceAddr);
+        AODVRREP *rrep = createRREP(rreq, destRoute, reverseRoute, sourceAddr);
 
         // send to the originator
         sendRREP(rrep, rreq->getOriginatorAddr(), 255);
@@ -936,7 +936,7 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
         }
 
         // create RREP
-        AODVRREP * rrep = createRREP(rreq, destRoute, reverseRoute, sourceAddr);
+        AODVRREP *rrep = createRREP(rreq, destRoute, reverseRoute, sourceAddr);
 
         // send to the originator
         sendRREP(rrep, rreq->getOriginatorAddr(), 255);
@@ -948,8 +948,8 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
             // issued a RREQ for the originating node and this RREP was produced in
             // response to that (fictitious) RREQ.
 
-            IRoute * originatorRoute = routingTable->findBestMatchingRoute(rreq->getOriginatorAddr());
-            AODVRREP * grrep = createGratuitousRREP(rreq, originatorRoute);
+            IRoute *originatorRoute = routingTable->findBestMatchingRoute(rreq->getOriginatorAddr());
+            AODVRREP *grrep = createGratuitousRREP(rreq, originatorRoute);
             sendGRREP(grrep, rreq->getDestAddr(), 100);
         }
 
@@ -978,7 +978,7 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
             rreq->setDestSeqNum(std::max(destRouteData->getDestSeqNum(), rreq->getDestSeqNum()));
         rreq->setUnknownSeqNumFlag(false);
 
-        AODVRREQ * outgoingRREQ = rreq->dup();
+        AODVRREQ *outgoingRREQ = rreq->dup();
         forwardRREQ(outgoingRREQ, timeToLive);
     }
     else
@@ -987,13 +987,13 @@ void AODVRouting::handleRREQ(AODVRREQ* rreq, const Address& sourceAddr, unsigned
     delete rreq;
 }
 
-IRoute * AODVRouting::createRoute(const Address& destAddr, const Address& nextHop,
+IRoute *AODVRouting::createRoute(const Address& destAddr, const Address& nextHop,
         unsigned int hopCount, bool hasValidDestNum, unsigned int destSeqNum,
         bool isActive, simtime_t lifeTime)
 {
 
-    IRoute * newRoute = routingTable->createRoute();
-    AODVRouteData * newProtocolData = new AODVRouteData();
+    IRoute *newRoute = routingTable->createRoute();
+    AODVRouteData *newProtocolData = new AODVRouteData();
 
     newProtocolData->setHasValidDestNum(hasValidDestNum);
 
@@ -1007,7 +1007,7 @@ IRoute * AODVRouting::createRoute(const Address& destAddr, const Address& nextHo
     newProtocolData->setLifeTime(lifeTime);
     newProtocolData->setDestSeqNum(destSeqNum);
 
-    InterfaceEntry * ifEntry = interfaceTable->getInterfaceByName("wlan0"); // TODO: IMPLEMENT: multiple interfaces
+    InterfaceEntry *ifEntry = interfaceTable->getInterfaceByName("wlan0"); // TODO: IMPLEMENT: multiple interfaces
     if (ifEntry)
         newRoute->setInterface(ifEntry);
 
@@ -1025,16 +1025,16 @@ IRoute * AODVRouting::createRoute(const Address& destAddr, const Address& nextHo
     return newRoute;
 }
 
-void AODVRouting::receiveSignal(cComponent* source, simsignal_t signalID, cObject* obj)
+void AODVRouting::receiveSignal(cComponent *source, simsignal_t signalID, cObject *obj)
 {
     Enter_Method("receiveChangeNotification");
     if (signalID == NF_LINK_BREAK)
     {
         EV_DETAIL << "Received link break signal" << endl;
-        Ieee80211Frame* ieee80211Frame = dynamic_cast<Ieee80211Frame *>(const_cast<cObject*>(obj));
+        Ieee80211Frame *ieee80211Frame = dynamic_cast<Ieee80211Frame *>(const_cast<cObject*>(obj));
         if (ieee80211Frame)
         {
-            INetworkDatagram * datagram = dynamic_cast<INetworkDatagram *>(ieee80211Frame->getEncapsulatedPacket());
+            INetworkDatagram *datagram = dynamic_cast<INetworkDatagram *>(ieee80211Frame->getEncapsulatedPacket());
             if (datagram)
             {
                 const Address& unreachableAddr = datagram->getDestinationAddress();
@@ -1048,7 +1048,7 @@ void AODVRouting::receiveSignal(cComponent* source, simsignal_t signalID, cObjec
 
                     // TODO: Implement: local repair
 
-                    IRoute * route = routingTable->findBestMatchingRoute(unreachableAddr);
+                    IRoute *route = routingTable->findBestMatchingRoute(unreachableAddr);
 
                     if (route && route->getSource() == this)
                         handleLinkBreakSendRERR(route->getNextHopAsGeneric());
@@ -1082,13 +1082,13 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
     //    Before this time, the entry SHOULD NOT be deleted.
 
 
-    IRoute * unreachableRoute = routingTable->findBestMatchingRoute(unreachableAddr);
+    IRoute *unreachableRoute = routingTable->findBestMatchingRoute(unreachableAddr);
 
     if (!unreachableRoute || unreachableRoute->getSource() != this)
         return;
 
     std::vector<UnreachableNode> unreachableNodes;
-    AODVRouteData * unreachableRouteData = check_and_cast<AODVRouteData *>(unreachableRoute->getProtocolData());
+    AODVRouteData *unreachableRouteData = check_and_cast<AODVRouteData *>(unreachableRoute->getProtocolData());
     UnreachableNode node;
     node.addr = unreachableAddr;
     node.seqNum = unreachableRouteData->getDestSeqNum();
@@ -1101,11 +1101,11 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
 
     for (int i = 0; i < routingTable->getNumRoutes(); i++)
     {
-        IRoute * route = routingTable->getRoute(i);
+        IRoute *route = routingTable->getRoute(i);
 
         if (route->getNextHopAsGeneric() == unreachableAddr)
         {
-            AODVRouteData * routeData = check_and_cast<AODVRouteData *>(route->getProtocolData());
+            AODVRouteData *routeData = check_and_cast<AODVRouteData *>(route->getProtocolData());
 
             if (routeData->hasValidDestNum())
                 routeData->setDestSeqNum(routeData->getDestSeqNum() + 1);
@@ -1138,7 +1138,7 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
         return;
     }
 
-    AODVRERR * rerr = createRERR(unreachableNodes);
+    AODVRERR *rerr = createRERR(unreachableNodes);
     rerrCount++;
 
     // broadcast
@@ -1146,9 +1146,9 @@ void AODVRouting::handleLinkBreakSendRERR(const Address& unreachableAddr)
     sendAODVPacket(rerr, addressType->getBroadcastAddress(), 1, jitterPar->doubleValue());
 }
 
-AODVRERR* AODVRouting::createRERR(const std::vector<UnreachableNode>& unreachableNodes)
+AODVRERR *AODVRouting::createRERR(const std::vector<UnreachableNode>& unreachableNodes)
 {
-    AODVRERR * rerr = new AODVRERR("AODV-RERR");
+    AODVRERR *rerr = new AODVRERR("AODV-RERR");
     unsigned int destCount = unreachableNodes.size();
 
     rerr->setPacketType(RERR);
@@ -1165,7 +1165,7 @@ AODVRERR* AODVRouting::createRERR(const std::vector<UnreachableNode>& unreachabl
     return rerr;
 }
 
-void AODVRouting::handleRERR(AODVRERR* rerr, const Address& sourceAddr)
+void AODVRouting::handleRERR(AODVRERR *rerr, const Address& sourceAddr)
 {
     EV_INFO << "AODV Route Error arrived with source addr: " << sourceAddr << endl;
 
@@ -1177,8 +1177,8 @@ void AODVRouting::handleRERR(AODVRERR* rerr, const Address& sourceAddr)
 
     for (int i = 0; i < routingTable->getNumRoutes(); i++)
     {
-        IRoute * route = routingTable->getRoute(i);
-        AODVRouteData * routeData = route ? dynamic_cast<AODVRouteData *>(route->getProtocolData()) : NULL;
+        IRoute *route = routingTable->getRoute(i);
+        AODVRouteData *routeData = route ? dynamic_cast<AODVRouteData *>(route->getProtocolData()) : NULL;
 
         if (!routeData)
             continue;
@@ -1228,7 +1228,7 @@ void AODVRouting::handleRERR(AODVRERR* rerr, const Address& sourceAddr)
     if (unreachableNeighbors.size() > 0 && (simTime() > rebootTime + deletePeriod || rebootTime == 0))
     {
        EV_INFO << "Sending RERR to inform our neighbors about link breaks." << endl;
-       AODVRERR * newRERR = createRERR(unreachableNeighbors);
+       AODVRERR *newRERR = createRERR(unreachableNeighbors);
        sendAODVPacket(newRERR, addressType->getBroadcastAddress(),1,0);
        rerrCount++;
     }
@@ -1236,7 +1236,7 @@ void AODVRouting::handleRERR(AODVRERR* rerr, const Address& sourceAddr)
 }
 
 
-bool AODVRouting::handleOperationStage(LifecycleOperation* operation, int stage, IDoneCallback* doneCallback)
+bool AODVRouting::handleOperationStage(LifecycleOperation *operation, int stage, IDoneCallback *doneCallback)
 {
     Enter_Method_Silent();
     if (dynamic_cast<NodeStartOperation *>(operation))
@@ -1299,20 +1299,20 @@ void AODVRouting::clearState()
     cancelEvent(rrepAckTimer);
 }
 
-void AODVRouting::handleWaitForRREP(WaitForRREP* rrepTimer)
+void AODVRouting::handleWaitForRREP(WaitForRREP *rrepTimer)
 {
     EV_INFO << "We didn't get any Route Reply within RREP timeout" << endl;
-    AODVRREQ * rreq = createRREQ(rrepTimer->getDestAddr());
+    AODVRREQ *rreq = createRREQ(rrepTimer->getDestAddr());
     sendRREQ(rreq, addressType->getBroadcastAddress(), 0);
 }
 
-void AODVRouting::forwardRREP(AODVRREP* rrep, const Address& destAddr, unsigned int timeToLive)
+void AODVRouting::forwardRREP(AODVRREP *rrep, const Address& destAddr, unsigned int timeToLive)
 {
     EV_INFO << "Forwarding the Route Reply to the node " << rrep->getOriginatorAddr() << " which originated the Route Request" << endl;
     sendAODVPacket(rrep, destAddr, 100, 0);
 }
 
-void AODVRouting::forwardRREQ(AODVRREQ* rreq, unsigned int timeToLive)
+void AODVRouting::forwardRREQ(AODVRREQ *rreq, unsigned int timeToLive)
 {
     EV_INFO << "Broadcasting the Route Request message with TTL= " << timeToLive << endl;
     sendAODVPacket(rreq, addressType->getBroadcastAddress(), timeToLive,jitterPar->doubleValue());
@@ -1329,7 +1329,7 @@ void AODVRouting::completeRouteDiscovery(const Address& target)
     // reinject the delayed datagrams
     for (std::multimap<Address, INetworkDatagram *>::iterator it = lt; it != ut; it++)
     {
-        INetworkDatagram * datagram = it->second;
+        INetworkDatagram *datagram = it->second;
         EV_DETAIL << "Sending queued datagram: source " << datagram->getSourceAddress() << ", destination " << datagram->getDestinationAddress() << endl;
         networkProtocol->reinjectQueuedDatagram(const_cast<const INetworkDatagram *>(datagram));
     }
@@ -1344,17 +1344,17 @@ void AODVRouting::completeRouteDiscovery(const Address& target)
     waitForRREPTimers.erase(waitRREPIter);
 }
 
-void AODVRouting::sendGRREP(AODVRREP* grrep, const Address& destAddr, unsigned int timeToLive)
+void AODVRouting::sendGRREP(AODVRREP *grrep, const Address& destAddr, unsigned int timeToLive)
 {
     EV_INFO << "Sending gratuitous Route Reply to " << destAddr << endl;
 
-    IRoute * destRoute = routingTable->findBestMatchingRoute(destAddr);
+    IRoute *destRoute = routingTable->findBestMatchingRoute(destAddr);
     const Address& nextHop = destRoute->getNextHopAsGeneric();
 
     sendAODVPacket(grrep, nextHop, timeToLive, 0);
 }
 
-AODVRREP* AODVRouting::createHelloMessage()
+AODVRREP *AODVRouting::createHelloMessage()
 {
     // called a Hello message, with the RREP
     // message fields set as follows:
@@ -1365,14 +1365,14 @@ AODVRREP* AODVRouting::createHelloMessage()
     //
     //    Hop Count                      0
     //
-    //    Lifetime                       ALLOWED_HELLO_LOSS * HELLO_INTERVAL
+    //    Lifetime                       ALLOWED_HELLO_LOSS *HELLO_INTERVAL
 
-    AODVRREP * helloMessage = new AODVRREP("AODV-HelloMsg");
+    AODVRREP *helloMessage = new AODVRREP("AODV-HelloMsg");
     helloMessage->setPacketType(RREP);
     helloMessage->setDestAddr(getSelfIPAddress());
     helloMessage->setDestSeqNum(sequenceNum);
     helloMessage->setHopCount(0);
-    helloMessage->setLifeTime(allowedHelloLoss * helloInterval);
+    helloMessage->setLifeTime(allowedHelloLoss  *helloInterval);
 
     return helloMessage;
 }
@@ -1391,10 +1391,10 @@ void AODVRouting::sendHelloMessagesIfNeeded()
 
     for (int i = 0; i < routingTable->getNumRoutes(); i++)
     {
-        IRoute * route = routingTable->getRoute(i);
+        IRoute *route = routingTable->getRoute(i);
         if (route->getSource() == this)
         {
-            AODVRouteData * routeData = check_and_cast<AODVRouteData*>(route->getProtocolData());
+            AODVRouteData *routeData = check_and_cast<AODVRouteData*>(route->getProtocolData());
             if (routeData->isActive())
             {
                 hasActiveRoute = true;
@@ -1406,17 +1406,17 @@ void AODVRouting::sendHelloMessagesIfNeeded()
     if (hasActiveRoute && (lastBroadcastTime == 0 || simTime() - lastBroadcastTime > helloInterval))
     {
         EV_INFO << "It is hello time, broadcasting Hello Messages with TTL=1" << endl;
-        AODVRREP * helloMessage = createHelloMessage();
+        AODVRREP *helloMessage = createHelloMessage();
         sendAODVPacket(helloMessage, addressType->getBroadcastAddress(), 1, jitterPar->doubleValue());
     }
 
     scheduleAt(simTime() + helloInterval, helloMsgTimer);
 }
 
-void AODVRouting::handleHelloMessage(AODVRREP* helloMessage)
+void AODVRouting::handleHelloMessage(AODVRREP *helloMessage)
 {
     const Address& helloOriginatorAddr = helloMessage->getDestAddr();
-    IRoute * routeHelloOriginator = routingTable->findBestMatchingRoute(helloOriginatorAddr);
+    IRoute *routeHelloOriginator = routingTable->findBestMatchingRoute(helloOriginatorAddr);
 
     // Whenever a node receives a Hello message from a neighbor, the node
     // SHOULD make sure that it has an active route to the neighbor, and
@@ -1437,7 +1437,7 @@ void AODVRouting::handleHelloMessage(AODVRREP* helloMessage)
         createRoute(helloOriginatorAddr, helloOriginatorAddr, 1, true, latestDestSeqNum, true, newLifeTime);
     else
     {
-        AODVRouteData * routeData = check_and_cast<AODVRouteData *>(routeHelloOriginator->getProtocolData());
+        AODVRouteData *routeData = check_and_cast<AODVRouteData *>(routeHelloOriginator->getProtocolData());
         simtime_t lifeTime = routeData->getLifeTime();
         updateRoutingTable(routeHelloOriginator, helloOriginatorAddr, 1, true, latestDestSeqNum, true, std::max(lifeTime, newLifeTime));
     }
@@ -1456,10 +1456,10 @@ void AODVRouting::expungeRoutes()
 {
     for (int i = 0; i < routingTable->getNumRoutes(); i++)
     {
-        IRoute * route = routingTable->getRoute(i);
+        IRoute *route = routingTable->getRoute(i);
         if (route->getSource() == this)
         {
-            AODVRouteData * routeData = check_and_cast<AODVRouteData *>(route->getProtocolData());
+            AODVRouteData *routeData = check_and_cast<AODVRouteData *>(route->getProtocolData());
             ASSERT(routeData != NULL);
             if (routeData->getLifeTime() <= simTime())
             {
@@ -1499,11 +1499,11 @@ void AODVRouting::scheduleExpungeRoutes()
     simtime_t nextExpungeTime = SimTime::getMaxTime();
     for (int i = 0; i < routingTable->getNumRoutes(); i++)
     {
-        IRoute * route = routingTable->getRoute(i);
+        IRoute *route = routingTable->getRoute(i);
 
         if (route->getSource() == this)
         {
-            AODVRouteData * routeData = check_and_cast<AODVRouteData *>(route->getProtocolData());
+            AODVRouteData *routeData = check_and_cast<AODVRouteData *>(route->getProtocolData());
             ASSERT(routeData != NULL);
 
             if (routeData->getLifeTime() < nextExpungeTime)
@@ -1530,7 +1530,7 @@ void AODVRouting::scheduleExpungeRoutes()
     }
 }
 
-INetfilter::IHook::Result AODVRouting::datagramForwardHook(INetworkDatagram* datagram, const InterfaceEntry* inputInterfaceEntry, const InterfaceEntry*& outputInterfaceEntry, Address& nextHopAddress)
+INetfilter::IHook::Result AODVRouting::datagramForwardHook(INetworkDatagram *datagram, const InterfaceEntry *inputInterfaceEntry, const InterfaceEntry*& outputInterfaceEntry, Address& nextHopAddress)
 {
     // TODO: Implement: Actions After Reboot
     // If the node receives a data packet for some other destination, it SHOULD
@@ -1540,7 +1540,7 @@ INetfilter::IHook::Result AODVRouting::datagramForwardHook(INetworkDatagram* dat
     Enter_Method("datagramForwardHook");
     const Address& destAddr = datagram->getDestinationAddress();
     const Address& sourceAddr = datagram->getSourceAddress();
-    IRoute * ipSource = routingTable->findBestMatchingRoute(sourceAddr);
+    IRoute *ipSource = routingTable->findBestMatchingRoute(sourceAddr);
 
     if (destAddr.isBroadcast() || routingTable->isLocalAddress(destAddr) || destAddr.isMulticast())
     {
@@ -1552,8 +1552,8 @@ INetfilter::IHook::Result AODVRouting::datagramForwardHook(INetworkDatagram* dat
 
     // TODO: IMPLEMENT: check if the datagram is a data packet or we take control packets as data packets
 
-    IRoute * routeDest = routingTable->findBestMatchingRoute(destAddr);
-    AODVRouteData * routeDestData = routeDest ? dynamic_cast<AODVRouteData *>(routeDest->getProtocolData()) : NULL;
+    IRoute *routeDest = routingTable->findBestMatchingRoute(destAddr);
+    AODVRouteData *routeDestData = routeDest ? dynamic_cast<AODVRouteData *>(routeDest->getProtocolData()) : NULL;
 
     // Each time a route is used to forward a data packet, its Active Route
     // Lifetime field of the source, destination and the next hop on the
@@ -1616,8 +1616,8 @@ void AODVRouting::sendRERRWhenNoRouteToForward(const Address& unreachableAddr)
     UnreachableNode node;
     node.addr = unreachableAddr;
 
-    IRoute * unreachableRoute = routingTable->findBestMatchingRoute(unreachableAddr);
-    AODVRouteData * unreachableRouteData = unreachableRoute ? dynamic_cast<AODVRouteData *>(unreachableRoute->getProtocolData()) : NULL;
+    IRoute *unreachableRoute = routingTable->findBestMatchingRoute(unreachableAddr);
+    AODVRouteData *unreachableRouteData = unreachableRoute ? dynamic_cast<AODVRouteData *>(unreachableRoute->getProtocolData()) : NULL;
 
     if (unreachableRouteData && unreachableRouteData->hasValidDestNum())
         node.seqNum = unreachableRouteData->getDestSeqNum();
@@ -1625,7 +1625,7 @@ void AODVRouting::sendRERRWhenNoRouteToForward(const Address& unreachableAddr)
         node.seqNum = 0;
 
     unreachableNodes.push_back(node);
-    AODVRERR * rerr = createRERR(unreachableNodes);
+    AODVRERR *rerr = createRERR(unreachableNodes);
 
     rerrCount++;
     EV_INFO << "Broadcasting Route Error message with TTL=1" << endl;
@@ -1645,10 +1645,10 @@ void AODVRouting::cancelRouteDiscovery(const Address& destAddr)
 
 bool AODVRouting::updateValidRouteLifeTime(const Address& destAddr, simtime_t lifetime)
 {
-    IRoute * route = routingTable->findBestMatchingRoute(destAddr);
+    IRoute *route = routingTable->findBestMatchingRoute(destAddr);
     if (route && route->getSource() == this)
     {
-        AODVRouteData * routeData = check_and_cast<AODVRouteData *>(route->getProtocolData());
+        AODVRouteData *routeData = check_and_cast<AODVRouteData *>(route->getProtocolData());
         if (routeData->isActive())
         {
             simtime_t newLifeTime = std::max(routeData->getLifeTime(), lifetime);
@@ -1660,20 +1660,20 @@ bool AODVRouting::updateValidRouteLifeTime(const Address& destAddr, simtime_t li
     return false;
 }
 
-AODVRREPACK * AODVRouting::createRREPACK()
+AODVRREPACK *AODVRouting::createRREPACK()
 {
-    AODVRREPACK * rrepACK = new AODVRREPACK("AODV-RREPACK");
+    AODVRREPACK *rrepACK = new AODVRREPACK("AODV-RREPACK");
     rrepACK->setPacketType(RREPACK);
     return rrepACK;
 }
 
-void AODVRouting::sendRREPACK(AODVRREPACK* rrepACK, const Address& destAddr)
+void AODVRouting::sendRREPACK(AODVRREPACK *rrepACK, const Address& destAddr)
 {
     EV_INFO << "Sending Route Reply ACK to " << destAddr << endl;
     sendAODVPacket(rrepACK, destAddr, 100, 0);
 }
 
-void AODVRouting::handleRREPACK(AODVRREPACK* rrepACK, const Address& neighborAddr)
+void AODVRouting::handleRREPACK(AODVRREPACK *rrepACK, const Address& neighborAddr)
 {
     // Note that the RREP-ACK packet does not contain any information about
     // which RREP it is acknowledging.  The time at which the RREP-ACK is
@@ -1682,11 +1682,11 @@ void AODVRouting::handleRREPACK(AODVRREPACK* rrepACK, const Address& neighborAdd
     ASSERT(rrepAckTimer->isScheduled());
     EV_INFO << "RREP-ACK arrived from " << neighborAddr << endl;
 
-    IRoute * route = routingTable->findBestMatchingRoute(neighborAddr);
+    IRoute *route = routingTable->findBestMatchingRoute(neighborAddr);
     if (route && route->getSource() == this)
     {
         EV_DETAIL << "Marking route " << route << " as active" << endl;
-        AODVRouteData * routeData = check_and_cast<AODVRouteData* >(route->getProtocolData());
+        AODVRouteData *routeData = check_and_cast<AODVRouteData *>(route->getProtocolData());
         routeData->setIsActive(true);
         cancelEvent(rrepAckTimer);
     }
