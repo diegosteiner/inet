@@ -1314,7 +1314,7 @@ void AODVRouting::handleWaitForRREP(WaitForRREP *rrepTimer)
 void AODVRouting::forwardRREP(AODVRREP *rrep, const Address& destAddr, unsigned int timeToLive)
 {
     EV_INFO << "Forwarding the Route Reply to the node " << rrep->getOriginatorAddr() << " which originated the Route Request" << endl;
-    sendAODVPacket(rrep, destAddr, 100, 0);
+    sendAODVPacket(rrep, destAddr, 100, jitterPar->doubleValue());
 }
 
 void AODVRouting::forwardRREQ(AODVRREQ *rreq, unsigned int timeToLive)
