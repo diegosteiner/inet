@@ -81,8 +81,11 @@ void AODVRouting::initialize(int stage)
         {
             helloMsgTimer = new cMessage("HelloMsgTimer");
 
+            // Jitter SHOULD be applied by reducing this delay by a random amount, so that
+            // the delay between consecutive transmissions of messages of the same type is
+            // equal to (MESSAGE_INTERVAL - jitter), where jitter is the random value.
             if (isOperational)
-                scheduleAt(simTime() + helloInterval + uniform(0,1), helloMsgTimer);
+                scheduleAt(simTime() + helloInterval - jitterPar->doubleValue(), helloMsgTimer);
         }
 
         expungeTimer = new cMessage("ExpungeTimer");
@@ -1249,7 +1252,7 @@ bool AODVRouting::handleOperationStage(LifecycleOperation *operation, int stage,
             rebootTime = simTime();
 
             if (useHelloMessages)
-                scheduleAt(simTime() + helloInterval, helloMsgTimer);
+                scheduleAt(simTime() + helloInterval - jitterPar->doubleValue(), helloMsgTimer);
 
             scheduleAt(simTime() + 1, counterTimer);
         }
@@ -1412,7 +1415,7 @@ void AODVRouting::sendHelloMessagesIfNeeded()
         sendAODVPacket(helloMessage, addressType->getBroadcastAddress(), 1, jitterPar->doubleValue());
     }
 
-    scheduleAt(simTime() + helloInterval, helloMsgTimer);
+    scheduleAt(simTime() + helloInterval - jitterPar->doubleValue(), helloMsgTimer);
 }
 
 void AODVRouting::handleHelloMessage(AODVRREP *helloMessage)
