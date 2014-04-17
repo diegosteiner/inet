@@ -94,12 +94,13 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         cPar *jitterPar;
 
         // the following parameters are calculated from the parameters defined above
-        simtime_t deletePeriod; // the time after which an expired route is deleted
-        simtime_t myRouteTimeout; // the value of the lifetime field that a destination node places in RREPs
-        simtime_t blacklistTimeout; // the time after which a blacklisted node is removed from the blacklist
-        simtime_t netTraversalTime; // an estimation of the traversal time for the complete network
-        simtime_t nextHopWait; // timeout for a RREP-ACK
-        simtime_t pathDiscoveryTime; // buffer timeout for each broadcasted RREQ message
+        // see the NED file for more info
+        simtime_t deletePeriod;
+        simtime_t myRouteTimeout;
+        simtime_t blacklistTimeout;
+        simtime_t netTraversalTime;
+        simtime_t nextHopWait;
+        simtime_t pathDiscoveryTime;
 
         // state
         unsigned int rreqId; // when sending a new RREQ packet, rreqID incremented by one from the last id used by this node

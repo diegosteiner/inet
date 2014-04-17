@@ -56,14 +56,12 @@ void AODVRouting::initialize(int stage)
         localAddTTL = par("localAddTTL");
         jitterPar = &par("jitter");
 
-        // Calculated according to the "10. Configuration Parameters"
-        // section
-        myRouteTimeout = 2.0 * activeRouteTimeout;
-        deletePeriod = 5.0 * std::max(activeRouteTimeout, helloInterval);
-        blacklistTimeout = rreqRetries * netTraversalTime;
-        netTraversalTime = 2.0 * nodeTraversalTime * netDiameter;
-        nextHopWait = nodeTraversalTime + 10;
-        pathDiscoveryTime = 2.0 * netTraversalTime;
+        myRouteTimeout = par("myRouteTimeout");
+        deletePeriod = par("deletePeriod");
+        blacklistTimeout = par("blacklistTimeout");
+        netTraversalTime = par("netTraversalTime");
+        nextHopWait = par("nextHopWait");
+        pathDiscoveryTime = par("pathDiscoveryTime");
 
     }
     else if (stage == INITSTAGE_ROUTING_PROTOCOLS)
