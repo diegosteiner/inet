@@ -81,6 +81,7 @@ void AODVRouting::initialize(int stage)
         {
             helloMsgTimer = new cMessage("HelloMsgTimer");
 
+            // RFC 5148:
             // Jitter SHOULD be applied by reducing this delay by a random amount, so that
             // the delay between consecutive transmissions of messages of the same type is
             // equal to (MESSAGE_INTERVAL - jitter), where jitter is the random value.
@@ -1314,6 +1315,11 @@ void AODVRouting::handleWaitForRREP(WaitForRREP *rrepTimer)
 void AODVRouting::forwardRREP(AODVRREP *rrep, const Address& destAddr, unsigned int timeToLive)
 {
     EV_INFO << "Forwarding the Route Reply to the node " << rrep->getOriginatorAddr() << " which originated the Route Request" << endl;
+
+    // RFC 5148:
+    // When a node forwards a message, it SHOULD be jittered by delaying it
+    // by a random duration.  This delay SHOULD be generated uniformly in an
+    // interval between zero and MAXJITTER.
     sendAODVPacket(rrep, destAddr, 100, jitterPar->doubleValue());
 }
 
