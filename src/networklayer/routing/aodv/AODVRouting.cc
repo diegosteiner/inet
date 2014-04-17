@@ -56,6 +56,8 @@ void AODVRouting::initialize(int stage)
         localAddTTL = par("localAddTTL");
         jitterPar = &par("jitter");
 
+        // Calculated according to the "10. Configuration Parameters"
+        // section
         myRouteTimeout = 2.0 * activeRouteTimeout;
         deletePeriod = 5.0 * std::max(activeRouteTimeout, helloInterval);
         blacklistTimeout = rreqRetries * netTraversalTime;
