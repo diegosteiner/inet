@@ -45,12 +45,18 @@ simple AODVRouting
         bool useHelloMessages = default(true); // see RFC 3561: 6.9
         bool useLocalRepair = default(false); // see RFC 3561: 6.12 *not implemented yet*
         int udpPort = default(654);
-        // **Note on jitter: An IMPORTANT TODO (or limitiation?)**:
-        // Choosing the correct jitter is not trivial and it depends on the network structure and other parameters
-        // (e. g. speed of the nodes)
-        // A badly choesen jitter could lead to high packet loss rate.
+
+        double maxPeriodicJitter @unit("s") = default(helloInterval / 4); // it MUST NOT be negative; it MUST NOT be greater than MESSAGE_INTERVAL/2; it SHOULD NOT be greater than MESSAGE_INTERVAL/4.
+        volatile double periodicJitter @unit("s") = default(uniform(0ms, maxPeriodicJitter)); // jitter for externally triggered message generation and message forwarding
+
+        // RFC 5148:
+        // need more revise: As well as the decision as to whether
+        // to use jitter being dependent on the medium access control and
+        // lower layers, the selection of the MAXJITTER parameter SHOULD
+        // be appropriate to those mechanisms.
         double maxJitter @unit("s") = default(5ms);
-        volatile double jitter @unit("s") = default(uniform(0ms, maxJitter)); // the delay when we broadcast a control packet
+        volatile double jitter @unit("s") = default(uniform(0ms, maxJitter)); // jitter for hello msgs
+
         double helloInterval @unit("s") = default(1s); // every helloInterval seconds a node broadcasts Hello messages (if it is necessary)
         int allowedHelloLoss = default(2); // allowedHelloLoss * helloInterval is the lifetime value for Hello messages
         double activeRouteTimeout @unit("s") = default(3s); // the timeout value for cached routes If Hello messages are used, then the

@@ -92,6 +92,7 @@ class INET_API AODVRouting : public cSimpleModule, public ILifecycle, public INe
         unsigned int allowedHelloLoss;
         simtime_t nodeTraversalTime;
         cPar *jitterPar;
+        cPar *periodicJitter;
 
         // the following parameters are calculated from the parameters defined above
         // see the NED file for more info
