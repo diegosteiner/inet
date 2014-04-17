@@ -49,7 +49,8 @@ simple AODVRouting
         // Choosing the correct jitter is not trivial and it depends on the network structure and other parameters
         // (e. g. speed of the nodes)
         // A badly choesen jitter could lead to high packet loss rate.
-        volatile double jitter @unit("s") = default(uniform(0ms,5ms)); // the delay when we broadcast a control packet
+        double maxJitter @unit("s") = default(5ms);
+        volatile double jitter @unit("s") = default(uniform(0ms, maxJitter)); // the delay when we broadcast a control packet
         double helloInterval @unit("s") = default(1s); // every helloInterval seconds a node broadcasts Hello messages (if it is necessary)
         int allowedHelloLoss = default(2); // allowedHelloLoss * helloInterval is the lifetime value for Hello messages
         double activeRouteTimeout @unit("s") = default(3s); // the timeout value for cached routes If Hello messages are used, then the
