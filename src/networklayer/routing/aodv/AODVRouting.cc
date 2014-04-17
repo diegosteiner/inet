@@ -725,7 +725,7 @@ void AODVRouting::handleRREP(AODVRREP *rrep, const Address& sourceAddr)
 }
 void AODVRouting::updateRoutingTable(IRoute *route, const Address& nextHop, unsigned int hopCount, bool hasValidDestNum, unsigned int destSeqNum, bool isActive, simtime_t lifeTime)
 {
-    EV_INFO << "Updating existing route: " << route << endl;
+    EV_DETAIL << "Updating existing route: " << route << endl;
 
     route->setNextHop(nextHop);
     route->setMetric(hopCount);
@@ -738,7 +738,7 @@ void AODVRouting::updateRoutingTable(IRoute *route, const Address& nextHop, unsi
     routingData->setIsActive(isActive);
     routingData->setHasValidDestNum(hasValidDestNum);
 
-    EV_INFO << "Route updated: " << route << endl;
+    EV_DETAIL << "Route updated: " << route << endl;
 
     scheduleExpungeRoutes();
 }
