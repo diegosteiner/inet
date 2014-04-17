@@ -1417,7 +1417,7 @@ void AODVRouting::sendHelloMessagesIfNeeded()
     {
         EV_INFO << "It is hello time, broadcasting Hello Messages with TTL=1" << endl;
         AODVRREP *helloMessage = createHelloMessage();
-        sendAODVPacket(helloMessage, addressType->getBroadcastAddress(), 1, jitterPar->doubleValue());
+        sendAODVPacket(helloMessage, addressType->getBroadcastAddress(), 1, 0);
     }
 
     scheduleAt(simTime() + helloInterval - periodicJitter->doubleValue(), helloMsgTimer);
