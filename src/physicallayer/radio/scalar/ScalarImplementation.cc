@@ -60,7 +60,7 @@ const IRadioSignalReception *ScalarRadioSignalAttenuationBase::computeReception(
     const simtime_t receptionEndTime = arrival->getEndTime();
     const Coord receptionStartPosition = arrival->getStartPosition();
     const Coord receptionEndPosition = arrival->getEndPosition();
-    // TODO: revise
+    // TODO: revise antenna gain computation
     const Coord direction = receptionStartPosition - transmission->getStartPosition();
     double transmitterAntennaGain = transmitterAntenna->getGain(direction);
     double receiverAntennaGain = receiverAntenna->getGain(direction);

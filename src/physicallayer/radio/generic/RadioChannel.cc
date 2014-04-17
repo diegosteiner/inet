@@ -238,7 +238,6 @@ const IRadioSignalListeningDecision *RadioChannel::computeListeningDecision(cons
 void RadioChannel::transmitToChannel(const IRadio *radio, const IRadioSignalTransmission *transmission)
 {
     transmissions.push_back(transmission);
-    // TODO: delme
     std::vector<const IRadioSignalArrival *> transmissionArrivals;
     for (std::vector<const IRadio *>::const_iterator it = radios.begin(); it != radios.end(); it++)
     {
@@ -292,12 +291,13 @@ const IRadioSignalListeningDecision *RadioChannel::listenOnChannel(const IRadio 
 
 bool RadioChannel::isPotentialReceiver(const IRadio *radio, const IRadioSignalTransmission *transmission) const
 {
-    // TODO: KLUDGE: move
+    // TODO: KLUDGE: move to some scalar specific class
     const ScalarRadioSignalReceiver *scalarReceiver = dynamic_cast<const ScalarRadioSignalReceiver *>(radio->getReceiver());
     const ScalarRadioSignalTransmission *scalarTransmission = dynamic_cast<const ScalarRadioSignalTransmission *>(transmission);
     if (scalarReceiver && scalarTransmission && scalarTransmission->getCarrierFrequency() != scalarReceiver->getCarrierFrequency())
         return false;
-    else {
+    else
+    {
         const IRadioSignalArrival *arrival = getArrival(radio, transmission);
         return isInCommunicationRange(transmission, arrival->getStartPosition(), arrival->getEndPosition());
     }

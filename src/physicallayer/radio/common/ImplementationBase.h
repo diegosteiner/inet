@@ -34,6 +34,7 @@
 // TODO: !!! extend radio decider interface to provide reception state for listeners? and support for carrier sensing for MACs
 // TODO: avoid the need for subclassing radio and radio channel to be able to have only one parameterizable radio and radio channel NED types
 // TODO: add classification of radios into grid cells to be able provide an approximation of the list of radios within communication range quickly
+// TODO: add time parameters to specify the amount of time needed to switch between radio modes
 // TODO: extend attenuation model with obstacles, is it a separate model or just another attenuation model?
 // TODO: refactor optimizing radio channel to allow turning on and off optimization via runtime parameters instead of subclassing
 // TODO: extend interface to allow CUDA optimizations e.g. with adding Pi(x, y, z, t, f, b) and SNIRi, etc. multiple nested loops to compute the minimum SNIR for all transmissions at all receiver radios at once
