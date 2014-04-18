@@ -24,44 +24,46 @@
 
 class INET_API AODVRouteData : public cObject
 {
-    protected:
-        std::set<Address> precursorList;
-        bool active;
-        bool repariable;
-        bool beingRepaired;
-        bool validDestNum;
-        unsigned int destSeqNum;
-        simtime_t lifeTime; // expiration or deletion time of the route
+  protected:
+    std::set<Address> precursorList;
+    bool active;
+    bool repariable;
+    bool beingRepaired;
+    bool validDestNum;
+    unsigned int destSeqNum;
+    simtime_t lifeTime;    // expiration or deletion time of the route
 
-    public:
+  public:
 
-        AODVRouteData()
-        {
-            active = true;
-            repariable = false;
-            beingRepaired = false;
-            validDestNum = true;
-            lifeTime = SIMTIME_ZERO;
-            destSeqNum = 0;
-        }
-        virtual ~AODVRouteData() {}
+    AODVRouteData()
+    {
+        active = true;
+        repariable = false;
+        beingRepaired = false;
+        validDestNum = true;
+        lifeTime = SIMTIME_ZERO;
+        destSeqNum = 0;
+    }
 
-        unsigned int getDestSeqNum() const { return destSeqNum; }
-        void setDestSeqNum(unsigned int destSeqNum) { this->destSeqNum = destSeqNum; }
-        bool hasValidDestNum() const { return validDestNum; }
-        void setHasValidDestNum(bool hasValidDestNum) { this->validDestNum = hasValidDestNum; }
-        bool isBeingRepaired() const { return beingRepaired; }
-        void setIsBeingRepaired(bool isBeingRepaired) { this->beingRepaired = isBeingRepaired; }
-        bool isRepariable() const { return repariable; }
-        void setIsRepariable(bool isRepariable) { this->repariable = isRepariable; }
-        const simtime_t& getLifeTime() const { return lifeTime; }
-        void setLifeTime(const simtime_t& lifeTime) { this->lifeTime = lifeTime; }
-        bool isActive() const { return active; }
-        void setIsActive(bool active) { this->active = active; }
-        void addPrecursor(const Address& precursorAddr) { precursorList.insert(precursorAddr); }
-        const std::set<Address>& getPrecursorList() const { return precursorList; }
+    virtual ~AODVRouteData() {}
+
+    unsigned int getDestSeqNum() const { return destSeqNum; }
+    void setDestSeqNum(unsigned int destSeqNum) { this->destSeqNum = destSeqNum; }
+    bool hasValidDestNum() const { return validDestNum; }
+    void setHasValidDestNum(bool hasValidDestNum) { this->validDestNum = hasValidDestNum; }
+    bool isBeingRepaired() const { return beingRepaired; }
+    void setIsBeingRepaired(bool isBeingRepaired) { this->beingRepaired = isBeingRepaired; }
+    bool isRepariable() const { return repariable; }
+    void setIsRepariable(bool isRepariable) { this->repariable = isRepariable; }
+    const simtime_t& getLifeTime() const { return lifeTime; }
+    void setLifeTime(const simtime_t& lifeTime) { this->lifeTime = lifeTime; }
+    bool isActive() const { return active; }
+    void setIsActive(bool active) { this->active = active; }
+    void addPrecursor(const Address& precursorAddr) { precursorList.insert(precursorAddr); }
+    const std::set<Address>& getPrecursorList() const { return precursorList; }
 };
 
 std::ostream& operator<<(std::ostream& out, const AODVRouteData *data);
 
-#endif
+#endif // ifndef AODVROUTEDATA_H_
+

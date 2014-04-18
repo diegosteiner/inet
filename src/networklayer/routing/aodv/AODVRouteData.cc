@@ -17,17 +17,16 @@
 
 #include "AODVRouteData.h"
 
-std::ostream& operator<<(std::ostream& out, const AODVRouteData *data)
+std::ostream & operator<<(std::ostream& out, const AODVRouteData *data)
 {
     out << " isActive = " << data->isActive()
         << ", hasValidDestNum = " << data->hasValidDestNum()
         << ", destNum = " << data->getDestSeqNum()
         << ", lifetime = " << data->getLifeTime();
 
-    const std::set<Address> &preList = data->getPrecursorList();
+    const std::set<Address>& preList = data->getPrecursorList();
 
-    if (!preList.empty())
-    {
+    if (!preList.empty()) {
         out << ", precursor list: ";
         std::set<Address>::const_iterator iter = preList.begin();
         out << *iter;
