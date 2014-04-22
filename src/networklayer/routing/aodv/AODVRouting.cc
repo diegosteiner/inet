@@ -1262,7 +1262,7 @@ void AODVRouting::forwardRREP(AODVRREP *rrep, const Address& destAddr, unsigned 
 
 void AODVRouting::forwardRREQ(AODVRREQ *rreq, unsigned int timeToLive)
 {
-    EV_INFO << "Broadcasting the Route Request message with TTL= " << timeToLive << endl;
+    EV_INFO << "Forwarding the Route Request message with TTL= " << timeToLive << endl;
     sendAODVPacket(rreq, addressType->getBroadcastAddress(), timeToLive, jitterPar->doubleValue());
 }
 
