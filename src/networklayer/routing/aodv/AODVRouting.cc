@@ -235,6 +235,7 @@ void AODVRouting::startRouteDiscovery(const Address& target, unsigned timeToLive
     EV_INFO << "Starting route discovery with originator " << getSelfIPAddress() << " and destination " << target << endl;
     ASSERT(!hasOngoingRouteDiscovery(target));
     AODVRREQ *rreq = createRREQ(target);
+    addressToRreqRetries[target] = 0;
     sendRREQ(rreq, addressType->getBroadcastAddress(), timeToLive);
 }
 
@@ -1205,7 +1206,7 @@ bool AODVRouting::handleOperationStage(LifecycleOperation *operation, int stage,
 void AODVRouting::clearState()
 {
     rerrCount = rreqCount = rreqId = sequenceNum = 0;
-
+    addressToRreqRetries.clear();
     for (std::map<Address, WaitForRREP *>::iterator it = waitForRREPTimers.begin(); it != waitForRREPTimers.end(); ++it)
         cancelAndDelete(it->second);
 
@@ -1230,7 +1231,21 @@ void AODVRouting::clearState()
 void AODVRouting::handleWaitForRREP(WaitForRREP *rrepTimer)
 {
     EV_INFO << "We didn't get any Route Reply within RREP timeout" << endl;
-    AODVRREQ *rreq = createRREQ(rrepTimer->getDestAddr());
+    Address destAddr = rrepTimer->getDestAddr();
+
+    ASSERT(addressToRreqRetries.find(destAddr) != addressToRreqRetries.end());
+    if (addressToRreqRetries[destAddr] == rreqRetries) {
+        EV_WARN << "Re-discovery attempts for node " << destAddr << " reached RREQ_RETRIES= " << rreqRetries << " limit. Stop sending RREQ." << endl;
+        return;
+    }
+
+    AODVRREQ *rreq = createRREQ(destAddr);
+
+    // the node MAY try again to discover a route by broadcasting another
+    // RREQ, up to a maximum of RREQ_RETRIES times at the maximum TTL value.
+    if (rrepTimer->getLastTTL() == netDiameter) // netDiameter is the maximum TTL value
+        addressToRreqRetries[destAddr]++;
+
     sendRREQ(rreq, addressType->getBroadcastAddress(), 0);
 }
 
