@@ -28,7 +28,7 @@
 #define debug true
 
 #define TIME(CODE) { struct timespec timeStart, timeEnd; clock_gettime(CLOCK_REALTIME, &timeStart); CODE; clock_gettime(CLOCK_REALTIME, &timeEnd); \
-    std::cout << "Elapsed time is " << ((timeEnd.tv_sec - timeStart.tv_sec) + (timeEnd.tv_nsec - timeStart.tv_nsec) / 1E+9) << "s during running " << #CODE << endl << endl; }
+    EV_DEBUG << "Elapsed time is " << ((timeEnd.tv_sec - timeStart.tv_sec) + (timeEnd.tv_nsec - timeStart.tv_nsec) / 1E+9) << "s during running " << #CODE << endl << endl; }
 
 double random(double a, double b)
 {
@@ -56,11 +56,19 @@ void testIdealRadio()
 
     IRadioFrame *radioFrame = transmitterRadio->transmitPacket(transmitterMacFrame, simTime());
     cPacket *receiverMacFrame = receiverRadio->receivePacket(radioFrame);
+    IRadioSignalReceptionDecision *receptionDecision = check_and_cast<IRadioSignalReceptionDecision *>(receiverMacFrame->getControlInfo());
 
     if (debug)
-        std::cout << "IdealRadio: " << receiverMacFrame->getName() << " : " << receiverMacFrame->getKind() << endl;
+        EV_DEBUG << "Ideal radio received " << receiverMacFrame << ", reception is " << (receptionDecision->isReceptionSuccessful() ? "successful" : "unsuccessful") << endl;
 
     delete channel;
+    delete transmitterMobility;
+    delete transmitterRadio;
+    delete transmitterMacFrame;
+    delete receiverMobility;
+    delete receiverRadio;
+    ASSERT(receiverMacFrame == transmitterMacFrame);
+    delete radioFrame;
 }
 
 void testScalarRadio()
@@ -87,7 +95,16 @@ void testScalarRadio()
     IRadioSignalReceptionDecision *receptionDecision = check_and_cast<IRadioSignalReceptionDecision *>(receiverMacFrame->getControlInfo());
 
     if (debug)
-        std::cout << "ScalarRadio: " << receiverMacFrame->getName() << " : " << receiverMacFrame->getKind() << endl;
+        EV_DEBUG << "Scalar radio received " << receiverMacFrame << ", reception is " << (receptionDecision->isReceptionSuccessful() ? "successful" : "unsuccessful") << endl;
+
+    delete channel;
+    delete transmitterMobility;
+    delete transmitterRadio;
+    delete transmitterMacFrame;
+    delete receiverMobility;
+    delete receiverRadio;
+    ASSERT(receiverMacFrame == transmitterMacFrame);
+    delete radioFrame;
 }
 
 void testDimensionalRadio()
@@ -114,9 +131,16 @@ void testDimensionalRadio()
     IRadioSignalReceptionDecision *receptionDecision = check_and_cast<IRadioSignalReceptionDecision *>(receiverMacFrame->getControlInfo());
 
     if (debug)
-        std::cout << "DimensionalRadio: " << receiverMacFrame->getName() << " : " << receiverMacFrame->getKind() << endl;
+        EV_DEBUG << "Dimensional radio received " << receiverMacFrame << ", reception is " << (receptionDecision->isReceptionSuccessful() ? "successful" : "unsuccessful") << endl;
 
     delete channel;
+    delete transmitterMobility;
+    delete transmitterRadio;
+    delete transmitterMacFrame;
+    delete receiverMobility;
+    delete receiverRadio;
+    ASSERT(receiverMacFrame == transmitterMacFrame);
+    delete radioFrame;
 }
 
 void testMultipleScalarRadios(IRadioChannel *channel, int radioCount, int frameCount, simtime_t duration, double playgroundSize)
@@ -125,7 +149,7 @@ void testMultipleScalarRadios(IRadioChannel *channel, int radioCount, int frameC
     int failedReceptionCount = 0;
     std::vector<IRadio *> radios;
     std::vector<IRadioFrame *> radioFrames;
-    std::cout << "Radio count: " << radioCount << ", frame count: " << frameCount << ", duration: " << duration << ", playground size: " << playgroundSize << endl;
+    EV_DEBUG << "Radio count: " << radioCount << ", frame count: " << frameCount << ", duration: " << duration << ", playground size: " << playgroundSize << endl;
 
     srand(0);
     for (int i = 0; i < radioCount; i++)
@@ -146,7 +170,7 @@ void testMultipleScalarRadios(IRadioChannel *channel, int radioCount, int frameC
         simtime_t startTime = random(0, duration.dbl());
         cPacket *transmitterMacFrame = new cPacket("Hello", 0, 64 * 8);
         if (debug)
-            std::cout << "Sending at " << startTime << " from " << index << endl;
+            EV_DEBUG << "Sending at " << startTime << " from " << index << endl;
         IRadioFrame *radioFrame = radio->transmitPacket(transmitterMacFrame, startTime);
         radioFrames.push_back(radioFrame);
     }
@@ -166,41 +190,62 @@ void testMultipleScalarRadios(IRadioChannel *channel, int radioCount, int frameC
             {
                 RadioSignalReceptionDecision *decision = check_and_cast<RadioSignalReceptionDecision *>(receiverMacFrame->getControlInfo());
                 const ScalarRadioSignalReception *reception = check_and_cast<const ScalarRadioSignalReception *>(decision->getReception());
-                std::cout.precision(16);
-                std::cout << "Radio decision arrival time: " << reception->getStartTime() << ", reception power: " << reception->getPower() << ", snr minimum: " << decision->getSNIR() << endl;
+                EV_DEBUG << std::setprecision(16) << "Radio decision arrival time: " << reception->getStartTime() << ", reception power: " << reception->getPower() << ", snr minimum: " << decision->getSNIR() << endl;
             }
             receiverMacFrame->removeControlInfo();
             check_and_cast<cPacket *>(radioFrame)->encapsulate(receiverMacFrame);
         }
     }
 
-    std::cout << "Successful reception count: " << successfulReceptionCount << ", failed reception count: " << failedReceptionCount << endl;
+    EV_DEBUG << "Successful reception count: " << successfulReceptionCount << ", failed reception count: " << failedReceptionCount << endl;
+
+    for (std::vector<IRadio *>::iterator it = radios.begin(); it != radios.end(); it++)
+    {
+        IRadio *radio = *it;
+        delete radio->getAntenna()->getMobility();
+        delete radio;
+    }
+
+    for (std::vector<IRadioFrame *>::iterator it = radioFrames.begin(); it != radioFrames.end(); it++)
+    {
+        IRadioFrame *radioFrame = *it;
+        delete radioFrame;
+    }
 }
 
-void testMultipleScalarRadiosWithAllChannels(int radioCount, int frameCount, simtime_t duration, double playgroundSize)
+void testMultipleScalarRadiosWithAllRadioChannels(int radioCount, int frameCount, simtime_t duration, double playgroundSize)
 {
     IRadioSignalPropagation *propagation = new ConstantSpeedRadioSignalPropagation(mps(SPEED_OF_LIGHT), 0);
     IRadioSignalAttenuation *attenuation = new ScalarRadioSignalFreeSpaceAttenuation(2);
     IRadioBackgroundNoise *backgroundNoise = new ScalarRadioBackgroundNoise(W(1E-14));
     RadioChannel *radioChannel = new RadioChannel(propagation, attenuation, backgroundNoise, 1E-12, 10E-3, m(sNaN), m(sNaN));
     TIME(testMultipleScalarRadios(radioChannel, radioCount, frameCount, duration, playgroundSize));
+    delete radioChannel;
+
+//    propagation = new ConstantSpeedRadioSignalPropagation(mps(SPEED_OF_LIGHT), 0);
+//    attenuation = new ScalarRadioSignalFreeSpaceAttenuation(2);
+//    backgroundNoise = new ScalarRadioBackgroundNoise(W(1E-14));
 //    MultiThreadedRadioChannel *multiThreadedRadioChannel = new MultiThreadedRadioChannel(propagation, attenuation, backgroundNoise, 1E-12, 10E-3, m(sNaN), m(sNaN), 3);
 //    TIME(testMultipleScalarRadios(multiThreadedRadioChannel, radioCount, frameCount, duration, playgroundSize));
+//    delete multiThreadedRadioChannel;
+
+//    propagation = new ConstantSpeedRadioSignalPropagation(mps(SPEED_OF_LIGHT), 0);
+//    attenuation = new ScalarRadioSignalFreeSpaceAttenuation(2);
+//    backgroundNoise = new ScalarRadioBackgroundNoise(W(1E-14));
 //    CUDARadioChannel *cudaRadioChannel = new CUDARadioChannel(propagation, attenuation, backgroundNoise, 1E-12, 10E-3, m(sNaN), m(sNaN));
 //    TIME(testMultipleScalarRadios(cudaRadioChannel, radioCount, frameCount, duration, playgroundSize));
+//    delete cudaRadioChannel;
 }
 
 Define_Module(RadioTest);
 
 void RadioTest::initialize(int stage)
 {
-//    testIdealRadio();
-//    testScalarRadio();
+    testIdealRadio();
+    testScalarRadio();
 //    testDimensionalRadio();
-//    testMultipleScalarRadiosWithAllChannels(10, 100, 1, 10);
-//    testMultipleScalarRadiosWithAllChannels(10, 100, 2, 100);
-//    testMultipleScalarRadiosWithAllChannels(20, 200, 2, 100);
-//    testMultipleScalarRadiosWithAllChannels(40, 400, 2, 100);
-    testMultipleScalarRadiosWithAllChannels(80, 800, 2, 100);
-    throw cTerminationException("Test finished");
+    testMultipleScalarRadiosWithAllRadioChannels(10, 100, 2, 100);
+//    testMultipleScalarRadiosWithAllRadioChannels(20, 200, 2, 100);
+//    testMultipleScalarRadiosWithAllRadioChannels(40, 400, 2, 100);
+//    testMultipleScalarRadiosWithAllRadioChannels(80, 800, 2, 100);
 }
