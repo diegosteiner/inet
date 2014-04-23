@@ -39,6 +39,8 @@ IdealMac::IdealMac()
 {
     queueModule = NULL;
     radio = NULL;
+    lastSentPk = NULL;
+    ackTimeoutMsg = NULL;
 }
 
 void IdealMac::flushQueue()
@@ -70,6 +72,7 @@ void IdealMac::initialize(int stage)
         headerLength = par("headerLength").longValue();
         promiscuous = par("promiscuous");
         fullDuplex = par("fullDuplex");
+        ackTimeout = par("ackTimeout");
 
         cModule *radioModule = gate("lowerLayerOut")->getPathEndGate()->getOwnerModule();
         radioModule->subscribe(IRadio::radioTransmissionStateChangedSignal, this);
@@ -87,6 +90,7 @@ void IdealMac::initialize(int stage)
     else if (stage == INITSTAGE_LINK_LAYER)
     {
         radio->setRadioMode(fullDuplex ? IRadio::RADIO_MODE_TRANSCEIVER : IRadio::RADIO_MODE_RECEIVER);
+        ackTimeoutMsg = new cMessage("link-break");
         getNextMsgFromHL();
         registerInterface();
     }
@@ -144,7 +148,8 @@ void IdealMac::receiveSignal(cComponent *source, simsignal_t signalID, long valu
         if (radioTransmissionState == IRadio::RADIO_TRANSMISSION_STATE_TRANSMITTING && newRadioTransmissionState == IRadio::RADIO_TRANSMISSION_STATE_IDLE)
         {
             radio->setRadioMode(fullDuplex ? IRadio::RADIO_MODE_TRANSCEIVER : IRadio::RADIO_MODE_RECEIVER);
-            getNextMsgFromHL();
+            if (!lastSentPk)
+                getNextMsgFromHL();
         }
         radioTransmissionState = newRadioTransmissionState;
     }
@@ -153,6 +158,18 @@ void IdealMac::receiveSignal(cComponent *source, simsignal_t signalID, long valu
 void IdealMac::startTransmitting(cPacket *msg)
 {
     // if there's any control info, remove it; then encapsulate the packet
+    if (lastSentPk)
+        throw cRuntimeError("Model error: unacked send");
+    Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl*>(msg->getControlInfo());
+    MACAddress dest = ctrl->getDestinationAddress();
+    if (!dest.isBroadcast() && !dest.isMulticast() && !dest.isUnspecified())
+    {   // unicast
+        lastSentPk = msg;
+        msg = msg->dup();
+        msg->setControlInfo(ctrl->dup());
+        scheduleAt(simTime() + ackTimeout, ackTimeoutMsg);
+    }
+
     IdealMacFrame *frame = encapsulate(msg);
 
     // send
@@ -200,10 +217,43 @@ void IdealMac::handleLowerPacket(cPacket *msg)
 
     if (!dropFrameNotForUs(frame))
     {
+        int senderModuleId = frame->getSrcModuleId();
+        IdealMac *senderMac = dynamic_cast<IdealMac *>(simulation.getModule(senderModuleId));
+        if (senderMac)
+            senderMac->acked(frame);
         // decapsulate and attach control info
         cPacket *higherlayerMsg = decapsulate(frame);
         EV << "Passing up contained packet `" << higherlayerMsg->getName() << "' to higher layer\n";
         sendUp(higherlayerMsg);
+    }
+}
+
+void IdealMac::handleSelfMessage(cMessage* message)
+{
+    if (message == ackTimeoutMsg)
+    {
+        // packet lost
+        emit(NF_LINK_BREAK, lastSentPk);
+        delete lastSentPk;
+        lastSentPk = NULL;
+        getNextMsgFromHL();
+    }
+    else
+    {
+        MACProtocolBase::handleSelfMessage(message);
+    }
+}
+
+
+void IdealMac::acked(IdealMacFrame *frame)
+{
+    Enter_Method_Silent();
+
+    if (lastSentPk && lastSentPk->getTreeId() == frame->getEncapsulatedPacket()->getTreeId())
+    {
+        cancelEvent(ackTimeoutMsg);
+        lastSentPk = NULL;
+        getNextMsgFromHL();
     }
 }
 
@@ -214,6 +264,7 @@ IdealMacFrame *IdealMac::encapsulate(cPacket *msg)
     frame->setByteLength(headerLength);
     frame->setSrc(ctrl->getSrc());
     frame->setDest(ctrl->getDest());
+    frame->setSrcModuleId(lastSentPk ? getId() : -1);
     frame->encapsulate(msg);
     delete ctrl;
     return frame;
