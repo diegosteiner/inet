@@ -43,6 +43,12 @@ IdealMac::IdealMac()
     ackTimeoutMsg = NULL;
 }
 
+IdealMac::~IdealMac()
+{
+    delete lastSentPk;
+    cancelAndDelete(ackTimeoutMsg);
+}
+
 void IdealMac::flushQueue()
 {
     ASSERT(queueModule);
@@ -60,6 +66,7 @@ void IdealMac::clearQueue()
     ASSERT(queueModule);
     queueModule->clear();
 }
+
 
 void IdealMac::initialize(int stage)
 {
@@ -164,9 +171,8 @@ void IdealMac::startTransmitting(cPacket *msg)
     MACAddress dest = ctrl->getDestinationAddress();
     if (!dest.isBroadcast() && !dest.isMulticast() && !dest.isUnspecified())
     {   // unicast
-        lastSentPk = msg;
-        msg = msg->dup();
-        msg->setControlInfo(ctrl->dup());
+        lastSentPk = msg->dup();
+        lastSentPk->setControlInfo(ctrl->dup());
         scheduleAt(simTime() + ackTimeout, ackTimeoutMsg);
     }
 
@@ -252,6 +258,7 @@ void IdealMac::acked(IdealMacFrame *frame)
     if (lastSentPk && lastSentPk->getTreeId() == frame->getEncapsulatedPacket()->getTreeId())
     {
         cancelEvent(ackTimeoutMsg);
+        delete lastSentPk;
         lastSentPk = NULL;
         getNextMsgFromHL();
     }
