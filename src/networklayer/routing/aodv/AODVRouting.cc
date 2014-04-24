@@ -769,7 +769,7 @@ void AODVRouting::handleRREQ(AODVRREQ *rreq, const Address& sourceAddr, unsigned
     RREQIdentifier rreqIdentifier(rreq->getOriginatorAddr(), rreq->getRreqId());
     std::map<RREQIdentifier, simtime_t, RREQIdentifierCompare>::iterator checkRREQArrivalTime = rreqsArrivalTime.find(rreqIdentifier);
     if (checkRREQArrivalTime != rreqsArrivalTime.end() && simTime() - checkRREQArrivalTime->second <= pathDiscoveryTime) {
-        EV_WARN << "The same packet has arrived within PATH_DISCOVERY_TIME. Discarding it" << endl;
+        EV_WARN << "The same packet has arrived within PATH_DISCOVERY_TIME= " << pathDiscoveryTime << ". Discarding it" << endl;
         delete rreq;
         return;
     }
