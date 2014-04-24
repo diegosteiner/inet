@@ -32,7 +32,7 @@ void AODVRouting::initialize(int stage)
         rebootTime = SIMTIME_ZERO;
         rreqId = sequenceNum = 0;
         rreqCount = rerrCount = 0;
-        host = this->getParentModule();
+        host = getContainingNode(this);
         routingTable = getModuleFromPar<IRoutingTable>(par("routingTableModule"), this);
         interfaceTable = getModuleFromPar<IInterfaceTable>(par("interfaceTableModule"), this);
         networkProtocol = getModuleFromPar<INetfilter>(par("networkProtocolModule"), this);
@@ -64,7 +64,7 @@ void AODVRouting::initialize(int stage)
         pathDiscoveryTime = par("pathDiscoveryTime");
     }
     else if (stage == INITSTAGE_ROUTING_PROTOCOLS) {
-        NodeStatus *nodeStatus = dynamic_cast<NodeStatus *>(this->getParentModule()->getSubmodule("status"));
+        NodeStatus *nodeStatus = dynamic_cast<NodeStatus *>(host->getSubmodule("status"));
         isOperational = !nodeStatus || nodeStatus->getState() == NodeStatus::UP;
 
         addressType = getSelfIPAddress().getAddressType();
