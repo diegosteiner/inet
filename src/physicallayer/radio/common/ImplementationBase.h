@@ -420,19 +420,24 @@ class INET_API ConstantSpeedRadioSignalPropagation : public cCompoundModule, pub
     protected:
         const mps propagationSpeed;
         const int mobilityApproximationCount;
+        mutable long arrivalComputationCount;
 
     protected:
+        virtual void finish();
+
         virtual const Coord computeArrivalPosition(const simtime_t startTime, const Coord startPosition, IMobility *mobility) const;
 
     public:
         ConstantSpeedRadioSignalPropagation() :
             propagationSpeed(SPEED_OF_LIGHT),
-            mobilityApproximationCount(0)
+            mobilityApproximationCount(0),
+            arrivalComputationCount(0)
         {}
 
         ConstantSpeedRadioSignalPropagation(mps propagationSpeed, int mobilityApproximationCount) :
             propagationSpeed(propagationSpeed),
-            mobilityApproximationCount(mobilityApproximationCount)
+            mobilityApproximationCount(mobilityApproximationCount),
+            arrivalComputationCount(0)
         {}
 
         virtual mps getPropagationSpeed() const { return propagationSpeed; }
