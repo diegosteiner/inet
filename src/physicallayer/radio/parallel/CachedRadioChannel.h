@@ -48,11 +48,6 @@ class INET_API CachedRadioChannel : public RadioChannel
         mutable long decisionCacheHitCount;
 
         /**
-         * The smallest transmission id that is used in the cache.
-         */
-        int baseTransmissionId;
-
-        /**
          * Caches pre-computed radio signal receptions for transmissions and
          * radios. The outer vector is indexed by transmission id (offset with
          * base transmission id) and the inner vector is indexed by radio id.
@@ -84,7 +79,7 @@ class INET_API CachedRadioChannel : public RadioChannel
         virtual void invalidateCachedDecisions(const IRadioSignalTransmission *transmission);
         virtual void invalidateCachedDecision(const IRadioSignalReceptionDecision *decision);
 
-        virtual const IRadioSignalReception *computeReception(const IRadio *radio, const IRadioSignalTransmission *transmission) const;
+        virtual const IRadioSignalReception *getReception(const IRadio *radio, const IRadioSignalTransmission *transmission) const;
 
     public:
         CachedRadioChannel() :
@@ -92,8 +87,7 @@ class INET_API CachedRadioChannel : public RadioChannel
             receptionCacheGetCount(0),
             receptionCacheHitCount(0),
             decisionCacheGetCount(0),
-            decisionCacheHitCount(0),
-            baseTransmissionId(0)
+            decisionCacheHitCount(0)
         {}
 
         CachedRadioChannel(const IRadioSignalPropagation *propagation, const IRadioSignalAttenuation *attenuation, const IRadioBackgroundNoise *backgroundNoise, const simtime_t minInterferenceTime, const simtime_t maxTransmissionDuration, m maxCommunicationRange, m maxInterferenceRange) :
@@ -101,8 +95,7 @@ class INET_API CachedRadioChannel : public RadioChannel
             receptionCacheGetCount(0),
             receptionCacheHitCount(0),
             decisionCacheGetCount(0),
-            decisionCacheHitCount(0),
-            baseTransmissionId(0)
+            decisionCacheHitCount(0)
         {}
 
         virtual const IRadioSignalReceptionDecision *receiveFromChannel(const IRadio *radio, const IRadioSignalListening *listening, const IRadioSignalTransmission *transmission) const;

@@ -21,10 +21,10 @@
 #include <queue>
 #include <deque>
 #include <pthread.h>
-#include "CachedRadioChannel.h"
+#include "RadioChannel.h"
 
 // TODO: error handling to avoid leaving locks when unwinding
-class INET_API MultiThreadedRadioChannel : public CachedRadioChannel
+class INET_API MultiThreadedRadioChannel : public RadioChannel
 {
     protected:
         class InvalidateCacheJob
@@ -72,11 +72,11 @@ class INET_API MultiThreadedRadioChannel : public CachedRadioChannel
     protected:
         bool isWorkersEnabled;
         std::vector<pthread_t *> workers;
-        mutable pthread_mutex_t pendingJobsLock;
-        mutable pthread_mutex_t cachedDecisionsLock;
-        mutable pthread_cond_t pendingJobsCondition;
-        std::deque<InvalidateCacheJob> pendingInvalidateCacheJobs;
-        std::priority_queue<ComputeCacheJob, std::vector<ComputeCacheJob>, ComputeCacheJobComparer> pendingComputeCacheJobs;
+        mutable pthread_mutex_t jobsLock;
+        mutable pthread_mutex_t cacheLock;
+        mutable pthread_cond_t jobsCondition;
+        std::deque<InvalidateCacheJob> invalidateCacheJobs;
+        std::priority_queue<ComputeCacheJob, std::vector<ComputeCacheJob>, ComputeCacheJobComparer> computeCacheJobs;
 
     protected:
         virtual void initialize(int stage);
@@ -85,19 +85,28 @@ class INET_API MultiThreadedRadioChannel : public CachedRadioChannel
         virtual void *workerMain(void *argument);
         static void *callWorkerMain(void *argument);
 
+        virtual const IRadioSignalArrival *getCachedArrival(const IRadio *radio, const IRadioSignalTransmission *transmission) const;
+        virtual void setCachedArrival(const IRadio *radio, const IRadioSignalTransmission *transmission, const IRadioSignalArrival *arrival) const;
+        virtual void removeCachedArrival(const IRadio *radio, const IRadioSignalTransmission *transmission) const;
+
+        virtual const IRadioSignalReception *getCachedReception(const IRadio *radio, const IRadioSignalTransmission *transmission) const;
+        virtual void setCachedReception(const IRadio *radio, const IRadioSignalTransmission *transmission, const IRadioSignalReception *reception) const;
+        virtual void removeCachedReception(const IRadio *radio, const IRadioSignalTransmission *transmission) const;
+
         virtual const IRadioSignalReceptionDecision *getCachedDecision(const IRadio *radio, const IRadioSignalTransmission *transmission) const;
         virtual void setCachedDecision(const IRadio *radio, const IRadioSignalTransmission *transmission, const IRadioSignalReceptionDecision *decision);
         virtual void removeCachedDecision(const IRadio *radio, const IRadioSignalTransmission *transmission);
+
         virtual void invalidateCachedDecisions(const IRadioSignalTransmission *transmission);
         virtual void invalidateCachedDecision(const IRadioSignalReceptionDecision *decision);
 
     public:
         MultiThreadedRadioChannel() :
-            CachedRadioChannel()
+            RadioChannel()
         {}
 
         MultiThreadedRadioChannel(const IRadioSignalPropagation *propagation, const IRadioSignalAttenuation *attenuation, const IRadioBackgroundNoise *noise, const simtime_t minInterferenceTime, const simtime_t maxTransmissionDuration, m maxCommunicationRange, m maxInterferenceRange, int workerCount) :
-            CachedRadioChannel(propagation, attenuation, noise, minInterferenceTime, maxTransmissionDuration, maxCommunicationRange, maxInterferenceRange)
+            RadioChannel(propagation, attenuation, noise, minInterferenceTime, maxTransmissionDuration, maxCommunicationRange, maxInterferenceRange)
         { initializeWorkers(workerCount); }
 
         virtual ~MultiThreadedRadioChannel();

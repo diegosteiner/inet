@@ -26,7 +26,7 @@ MultiThreadedRadioChannel::~MultiThreadedRadioChannel()
 
 void MultiThreadedRadioChannel::initialize(int stage)
 {
-    MultiThreadedRadioChannel::initialize(stage);
+    RadioChannel::initialize(stage);
     if (stage == INITSTAGE_LOCAL)
     {
         initializeWorkers(3);
@@ -39,11 +39,11 @@ void MultiThreadedRadioChannel::initializeWorkers(int workerCount)
     pthread_mutexattr_t mutexattr;
     pthread_mutexattr_init(&mutexattr);
     pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
-    pthread_mutex_init(&pendingJobsLock, NULL);
-    pthread_mutex_init(&cachedDecisionsLock, &mutexattr);
+    pthread_mutex_init(&jobsLock, NULL);
+    pthread_mutex_init(&cacheLock, &mutexattr);
     pthread_condattr_t condattr;
     pthread_condattr_init(&condattr);
-    pthread_cond_init(&pendingJobsCondition, &condattr);
+    pthread_cond_init(&jobsCondition, &condattr);
     pthread_condattr_destroy(&condattr);
     pthread_attr_t attr;
     pthread_attr_init(&attr);
@@ -66,12 +66,12 @@ void MultiThreadedRadioChannel::initializeWorkers(int workerCount)
 void MultiThreadedRadioChannel::terminateWorkers()
 {
     isWorkersEnabled = false;
-    pthread_mutex_lock(&pendingJobsLock);
-    pendingInvalidateCacheJobs.clear();
-    while (!pendingComputeCacheJobs.empty())
-        pendingComputeCacheJobs.pop();
-    pthread_cond_broadcast(&pendingJobsCondition);
-    pthread_mutex_unlock(&pendingJobsLock);
+    pthread_mutex_lock(&jobsLock);
+    invalidateCacheJobs.clear();
+    while (!computeCacheJobs.empty())
+        computeCacheJobs.pop();
+    pthread_cond_broadcast(&jobsCondition);
+    pthread_mutex_unlock(&jobsLock);
     for (std::vector<pthread_t *>::iterator it = workers.begin(); it != workers.end(); it++)
     {
         void *status;
@@ -79,9 +79,9 @@ void MultiThreadedRadioChannel::terminateWorkers()
         pthread_join(*worker, &status);
         delete worker;
     }
-    pthread_cond_destroy(&pendingJobsCondition);
-    pthread_mutex_destroy(&pendingJobsLock);
-    pthread_mutex_destroy(&cachedDecisionsLock);
+    pthread_cond_destroy(&jobsCondition);
+    pthread_mutex_destroy(&jobsLock);
+    pthread_mutex_destroy(&cacheLock);
 }
 
 void *MultiThreadedRadioChannel::callWorkerMain(void *argument)
@@ -93,113 +93,160 @@ void *MultiThreadedRadioChannel::workerMain(void *argument)
 {
     while (isWorkersEnabled)
     {
-        pthread_mutex_lock(&pendingJobsLock);
-        while (isWorkersEnabled && pendingInvalidateCacheJobs.empty() && pendingComputeCacheJobs.empty())
-            pthread_cond_wait(&pendingJobsCondition, &pendingJobsLock);
+        pthread_mutex_lock(&jobsLock);
+        while (isWorkersEnabled && invalidateCacheJobs.empty() && computeCacheJobs.empty())
+            pthread_cond_wait(&jobsCondition, &jobsLock);
         EV_DEBUG << "Worker " << pthread_self() << " is looking for jobs on CPU " << sched_getcpu() << endl;
-        if (!pendingInvalidateCacheJobs.empty())
+        if (!invalidateCacheJobs.empty())
         {
-            const InvalidateCacheJob invalidateCacheJob = pendingInvalidateCacheJobs.front();
-            pendingInvalidateCacheJobs.pop_front();
+            const InvalidateCacheJob invalidateCacheJob = invalidateCacheJobs.front();
+            invalidateCacheJobs.pop_front();
             EV_DEBUG << "Worker " << pthread_self() << " is running invalidate cache " << &invalidateCacheJob << endl;
-            pthread_mutex_unlock(&pendingJobsLock);
+            pthread_mutex_unlock(&jobsLock);
             // TODO: this is a race condition with the main thread when receiving a signal
             invalidateCachedDecisions(invalidateCacheJob.transmission);
-            pthread_mutex_lock(&pendingJobsLock);
-            pthread_cond_broadcast(&pendingJobsCondition);
-            pthread_mutex_unlock(&pendingJobsLock);
+            pthread_mutex_lock(&jobsLock);
+            pthread_cond_broadcast(&jobsCondition);
+            pthread_mutex_unlock(&jobsLock);
         }
-        else if (!pendingComputeCacheJobs.empty())
+        else if (!computeCacheJobs.empty())
         {
-            const ComputeCacheJob computeCacheJob = pendingComputeCacheJobs.top();
-            pendingComputeCacheJobs.pop();
+            const ComputeCacheJob computeCacheJob = computeCacheJobs.top();
+            computeCacheJobs.pop();
             EV_DEBUG << "Worker " << pthread_self() << " is computing reception at " << computeCacheJob.receptionStartTime << endl;
             std::vector<const IRadioSignalTransmission *> *transmissionsCopy = new std::vector<const IRadioSignalTransmission *>(transmissions);
-            pthread_mutex_unlock(&pendingJobsLock);
+            pthread_mutex_unlock(&jobsLock);
             const IRadioSignalReceptionDecision *decision = computeReceptionDecision(computeCacheJob.radio, computeCacheJob.listening, computeCacheJob.transmission, transmissionsCopy);
             setCachedDecision(computeCacheJob.radio, computeCacheJob.transmission, decision);
             delete computeCacheJob.listening;
             delete transmissionsCopy;
         }
         else
-            pthread_mutex_unlock(&pendingJobsLock);
+            pthread_mutex_unlock(&jobsLock);
     }
     return NULL;
+}
+
+const IRadioSignalArrival *MultiThreadedRadioChannel::getCachedArrival(const IRadio *radio, const IRadioSignalTransmission *transmission) const
+{
+    const IRadioSignalArrival *arrival = NULL;
+    pthread_mutex_lock(&cacheLock);
+    arrival = RadioChannel::getCachedArrival(radio, transmission);
+    pthread_mutex_unlock(&cacheLock);
+    return arrival;
+}
+
+void MultiThreadedRadioChannel::setCachedArrival(const IRadio *radio, const IRadioSignalTransmission *transmission, const IRadioSignalArrival *arrival) const
+{
+    pthread_mutex_lock(&cacheLock);
+    RadioChannel::setCachedArrival(radio, transmission, arrival);
+    pthread_mutex_unlock(&cacheLock);
+}
+
+void MultiThreadedRadioChannel::removeCachedArrival(const IRadio *radio, const IRadioSignalTransmission *transmission) const
+{
+    pthread_mutex_lock(&cacheLock);
+    RadioChannel::removeCachedArrival(radio, transmission);
+    pthread_mutex_unlock(&cacheLock);
+}
+
+const IRadioSignalReception *MultiThreadedRadioChannel::getCachedReception(const IRadio *radio, const IRadioSignalTransmission *transmission) const
+{
+    const IRadioSignalReception *reception = NULL;
+    pthread_mutex_lock(&cacheLock);
+    reception = RadioChannel::getCachedReception(radio, transmission);
+    pthread_mutex_unlock(&cacheLock);
+    return reception;
+}
+
+void MultiThreadedRadioChannel::setCachedReception(const IRadio *radio, const IRadioSignalTransmission *transmission, const IRadioSignalReception *reception) const
+{
+    pthread_mutex_lock(&cacheLock);
+    RadioChannel::setCachedReception(radio, transmission, reception);
+    pthread_mutex_unlock(&cacheLock);
+}
+
+void MultiThreadedRadioChannel::removeCachedReception(const IRadio *radio, const IRadioSignalTransmission *transmission) const
+{
+    pthread_mutex_lock(&cacheLock);
+    RadioChannel::removeCachedReception(radio, transmission);
+    pthread_mutex_unlock(&cacheLock);
 }
 
 const IRadioSignalReceptionDecision *MultiThreadedRadioChannel::getCachedDecision(const IRadio *radio, const IRadioSignalTransmission *transmission) const
 {
     const IRadioSignalReceptionDecision *decision = NULL;
-    pthread_mutex_lock(&cachedDecisionsLock);
-    decision = CachedRadioChannel::getCachedDecision(radio, transmission);
-    pthread_mutex_unlock(&cachedDecisionsLock);
+    pthread_mutex_lock(&cacheLock);
+    decision = RadioChannel::getCachedDecision(radio, transmission);
+    pthread_mutex_unlock(&cacheLock);
     return decision;
 }
 
 void MultiThreadedRadioChannel::setCachedDecision(const IRadio *radio, const IRadioSignalTransmission *transmission, const IRadioSignalReceptionDecision *decision)
 {
-    pthread_mutex_lock(&cachedDecisionsLock);
-    CachedRadioChannel::setCachedDecision(radio, transmission, decision);
-    CachedRadioChannel::setCachedReception(radio, transmission, decision->getReception());
-    pthread_mutex_unlock(&cachedDecisionsLock);
+    pthread_mutex_lock(&cacheLock);
+    RadioChannel::setCachedDecision(radio, transmission, decision);
+    pthread_mutex_unlock(&cacheLock);
 }
 
 void MultiThreadedRadioChannel::removeCachedDecision(const IRadio *radio, const IRadioSignalTransmission *transmission)
 {
-    pthread_mutex_lock(&pendingJobsLock);
-    CachedRadioChannel::removeCachedDecision(radio, transmission);
-    pthread_mutex_unlock(&pendingJobsLock);
+    pthread_mutex_lock(&cacheLock);
+    RadioChannel::removeCachedDecision(radio, transmission);
+    pthread_mutex_unlock(&cacheLock);
 }
 
 void MultiThreadedRadioChannel::invalidateCachedDecisions(const IRadioSignalTransmission *transmission)
 {
-    pthread_mutex_lock(&cachedDecisionsLock);
-    CachedRadioChannel::invalidateCachedDecisions(transmission);
-    pthread_mutex_unlock(&cachedDecisionsLock);
+    pthread_mutex_lock(&cacheLock);
+    RadioChannel::invalidateCachedDecisions(transmission);
+    pthread_mutex_unlock(&cacheLock);
 }
 
 void MultiThreadedRadioChannel::invalidateCachedDecision(const IRadioSignalReceptionDecision *decision)
 {
-    pthread_mutex_lock(&cachedDecisionsLock);
-    CachedRadioChannel::invalidateCachedDecision(decision);
-    pthread_mutex_unlock(&cachedDecisionsLock);
     const IRadioSignalReception *reception = decision->getReception();
+    pthread_mutex_lock(&cacheLock);
+    RadioChannel::invalidateCachedDecision(decision);
+    pthread_mutex_unlock(&cacheLock);
     const IRadio *radio = reception->getReceiver();
     const IRadioSignalTransmission *transmission = reception->getTransmission();
     const IRadioSignalListening *listening = radio->getReceiver()->createListening(radio, transmission->getStartTime(), transmission->getEndTime(), transmission->getStartPosition(), transmission->getEndPosition());
     simtime_t startTime = reception->getStartTime();
-    pthread_mutex_lock(&pendingJobsLock);
-    pendingComputeCacheJobs.push(ComputeCacheJob(radio, listening, transmission, startTime));
-    pthread_mutex_unlock(&pendingJobsLock);
+    pthread_mutex_lock(&jobsLock);
+    computeCacheJobs.push(ComputeCacheJob(radio, listening, transmission, startTime));
+    pthread_mutex_unlock(&jobsLock);
 }
 
 void MultiThreadedRadioChannel::transmitToChannel(const IRadio *transmitterRadio, const IRadioSignalTransmission *transmission)
 {
     EV_DEBUG << "Radio " << transmitterRadio << " transmits signal " << transmission << endl;
-    pthread_mutex_lock(&pendingJobsLock);
+    pthread_mutex_lock(&cacheLock);
     RadioChannel::transmitToChannel(transmitterRadio, transmission);
-    pendingInvalidateCacheJobs.push_back(InvalidateCacheJob(transmission));
+    pthread_mutex_unlock(&cacheLock);
+    pthread_mutex_lock(&jobsLock);
+    invalidateCacheJobs.push_back(InvalidateCacheJob(transmission));
     for (std::vector<const IRadio *>::iterator it = radios.begin(); it != radios.end(); it++) {
         const IRadio *receiverRadio = *it;
         // TODO: merge with sendRadioFrame!
         if (transmitterRadio != receiverRadio && isPotentialReceiver(receiverRadio, transmission)) {
             const simtime_t receptionStartTime = getArrival(receiverRadio, transmission)->getStartTime();
             const IRadioSignalListening *listening = receiverRadio->getReceiver()->createListening(receiverRadio, transmission->getStartTime(), transmission->getEndTime(), transmission->getStartPosition(), transmission->getEndPosition());
-            pendingComputeCacheJobs.push(ComputeCacheJob(receiverRadio, listening, transmission, receptionStartTime));
+            computeCacheJobs.push(ComputeCacheJob(receiverRadio, listening, transmission, receptionStartTime));
         }
     }
     // TODO: what shall we do with already running computation jobs?
-    EV_DEBUG << "Transmission count: " << transmissions.size() << " pending job count: " << pendingComputeCacheJobs.size() << " decision cache hit count: " << decisionCacheHitCount << " decision cache get count: " << decisionCacheGetCount << " decision cache %: " << (100 * (double)decisionCacheHitCount / (double)decisionCacheGetCount) << "%\n";
-    pthread_cond_broadcast(&pendingJobsCondition);
-    pthread_mutex_unlock(&pendingJobsLock);
+    EV_DEBUG << "Transmission count: " << transmissions.size() << " job count: " << computeCacheJobs.size() << " decision cache hit count: " << cacheDecisionHitCount << " decision cache get count: " << cacheDecisionGetCount << " decision cache %: " << (100 * (double)cacheDecisionHitCount / (double)cacheDecisionGetCount) << "%\n";
+    pthread_cond_broadcast(&jobsCondition);
+    pthread_mutex_unlock(&jobsLock);
 }
 
 const IRadioSignalReceptionDecision *MultiThreadedRadioChannel::receiveFromChannel(const IRadio *radio, const IRadioSignalListening *listening, const IRadioSignalTransmission *transmission) const
 {
     EV_DEBUG << "Radio " << radio << " receives signal " << transmission << endl;
-    pthread_mutex_lock(&pendingJobsLock);
-    while (!pendingInvalidateCacheJobs.empty())
-        pthread_cond_wait(&pendingJobsCondition, &pendingJobsLock);
-    pthread_mutex_unlock(&pendingJobsLock);
-    return CachedRadioChannel::receiveFromChannel(radio, listening, transmission);
+    pthread_mutex_lock(&jobsLock);
+    while (!invalidateCacheJobs.empty())
+        pthread_cond_wait(&jobsCondition, &jobsLock);
+    pthread_mutex_unlock(&jobsLock);
+    return RadioChannel::receiveFromChannel(radio, listening, transmission);
 }
