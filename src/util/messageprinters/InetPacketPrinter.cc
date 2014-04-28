@@ -53,8 +53,6 @@ void InetPacketPrinter::printMessage(std::ostream& os, cMessage *msg) const
 {
     Address srcAddr, destAddr;
 
-    os << msg->getName() << " ";
-
     for (cPacket *pk = dynamic_cast<cPacket *>(msg); pk; pk = pk->getEncapsulatedPacket()) {
         if (dynamic_cast<INetworkDatagram *>(pk)) {
             INetworkDatagram *dgram = dynamic_cast<INetworkDatagram *>(pk);
@@ -81,7 +79,7 @@ void InetPacketPrinter::printMessage(std::ostream& os, cMessage *msg) const
             return;
         }
     }
-    os << "(" << msg->getClassName() << ")" << msg->getFullName() << " id=" << msg->getId() << " kind=" << msg->getKind();
+    os << "(" << msg->getClassName() << ")" << " id=" << msg->getId() << " kind=" << msg->getKind();
 }
 
 void InetPacketPrinter::printTCPPacket(std::ostream& os, Address srcAddr, Address destAddr, TCPSegment *tcpSeg) const
