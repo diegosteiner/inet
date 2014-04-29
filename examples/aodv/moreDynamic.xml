@@ -20,4 +20,16 @@
     <at t="25.5">
         <tell module="lifecycleController" target="host[14]" operation="NodeShutdownOperation"/>
     </at>
+    <at t="39">
+        <tell module="lifecycleController" target="host[10]" operation="NodeStartOperation"/>
+    </at>
+    <at t="40.5">
+        <tell module="lifecycleController" target="host[11]" operation="NodeShutdownOperation"/>
+    </at>
+    <at t="40.5">
+        <tell module="lifecycleController" target="host[3]" operation="NodeShutdownOperation"/>
+    </at>
+    <at t="40.5">
+        <tell module="lifecycleController" target="host[8]" operation="NodeShutdownOperation"/>
+    </at>
 </scenario>
