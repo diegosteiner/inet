@@ -19,7 +19,7 @@ import inet.base.LifecycleController;
 import inet.networklayer.autorouting.ipv4.IPv4NetworkConfigurator;
 import inet.networklayer.ipv4.RoutingTableRecorder;
 import inet.nodes.aodv.AODVRouter;
-import inet.physicallayer.radio.simplified.SimplifiedRadioChannel;
+import inet.physicallayer.radio.ideal.IdealRadioChannel;
 import inet.world.scenario.ScenarioManager;
 
 
@@ -28,7 +28,7 @@ network AODVNetwork
     parameters:
         int numHosts;
     submodules:
-        radioChannel: SimplifiedRadioChannel {
+        radioChannel: IdealRadioChannel {
             parameters:
                 @display("p=50,50");
         }
