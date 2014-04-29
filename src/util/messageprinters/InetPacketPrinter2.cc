@@ -27,6 +27,7 @@
 #include "IPv4Datagram.h"
 #include "PingPayload_m.h"
 #include "RIPPacket_m.h"
+#include "SimplifiedRadioFrame.h"
 #include "TCPSegment.h"
 #include "UDPPacket.h"
 
@@ -45,6 +46,7 @@ class INET_API InetPacketPrinter2 : public cMessagePrinter
         std::string formatIeee80211Frame(Ieee80211Frame *packet) const;
         std::string formatPingPayload(PingPayload *packet) const;
         std::string formatRIPPacket(RIPPacket *packet) const;
+        std::string formatSimplifiedRadioFrame(SimplifiedRadioFrame *packet) const;
         std::string formatTCPPacket(TCPSegment *tcpSeg) const;
         std::string formatUDPPacket(UDPPacket *udpPacket) const;
     public:
@@ -111,6 +113,9 @@ void InetPacketPrinter2::printMessage(std::ostream& os, cMessage *msg) const
         else if (dynamic_cast<RIPPacket *>(pk)) {
             out << formatRIPPacket(static_cast<RIPPacket *>(pk));
         }
+        else if (dynamic_cast<SimplifiedRadioFrame *>(pk)) {
+            out << formatSimplifiedRadioFrame(static_cast<SimplifiedRadioFrame *>(pk));
+        }
         else
             out << pk->getClassName() <<":" << pk->getByteLength() << " bytes";
         if (outs.length())
@@ -160,46 +165,46 @@ std::string InetPacketPrinter2::formatIeee80211Frame(Ieee80211Frame *packet) con
     os << "WLAN ";
     switch (packet->getType()) {
         case ST_ASSOCIATIONREQUEST:
-            os << " assoc req";
+            os << " assoc req";     //TODO
             break;
         case ST_ASSOCIATIONRESPONSE:
-            os << " assoc resp";
+            os << " assoc resp";     //TODO
             break;
         case ST_REASSOCIATIONREQUEST:
-            os << " reassoc req";
+            os << " reassoc req";     //TODO
             break;
         case ST_REASSOCIATIONRESPONSE:
-            os << " reassoc resp";
+            os << " reassoc resp";     //TODO
             break;
         case ST_PROBEREQUEST:
-            os << " probe request";
+            os << " probe request";     //TODO
             break;
         case ST_PROBERESPONSE:
-            os << " probe response";
+            os << " probe response";     //TODO
             break;
         case ST_BEACON:
-            os << "beacon";
+            os << "beacon";     //TODO
             break;
         case ST_ATIM:
-            os << " atim";
+            os << " atim";     //TODO
             break;
-        case ST_DISASSOCIATION:
-            os << " disassoc";
+        case ST_DISASSOCIATION:     //TODO
+            os << " disassoc";     //TODO
             break;
         case ST_AUTHENTICATION:
-            os << " auth";
+            os << " auth";     //TODO
             break;
         case ST_DEAUTHENTICATION:
-            os << " deauth";
+            os << " deauth";     //TODO
             break;
         case ST_ACTION:
-            os << " action";
+            os << " action";     //TODO
             break;
         case ST_NOACKACTION:
-            os << " noackaction";
+            os << " noackaction";     //TODO
             break;
         case ST_PSPOLL:
-            os << " pspoll";
+            os << " pspoll";     //TODO
             break;
         case ST_RTS:
         {
@@ -214,21 +219,23 @@ std::string InetPacketPrinter2::formatIeee80211Frame(Ieee80211Frame *packet) con
             os << " ack " << packet->getReceiverAddress();
             break;
         case ST_BLOCKACK_REQ:
-            os << " reassoc resp";
+            os << " reassoc resp";     //TODO
             break;
         case ST_BLOCKACK:
-            os << " block ack";
+            os << " block ack";     //TODO
             break;
         case ST_DATA:
-            os << " data";
+            os << " data";     //TODO
             break;
         case ST_LBMS_REQUEST:
-            os << " lbms req";
+            os << " lbms req";     //TODO
             break;
         case ST_LBMS_REPORT:
-            os << " lbms report";
+            os << " lbms report";     //TODO
             break;
-        default: os << "??? (" << packet->getClassName() << ")"; break;
+        default:
+            os << "??? (" << packet->getClassName() << ")";
+            break;
     }
     return os.str();
 }
@@ -345,6 +352,15 @@ std::string InetPacketPrinter2::formatRIPPacket(RIPPacket *packet) const
         else
         os << " m=" << entry.metric;
     }
+    return os.str();
+}
+
+std::string InetPacketPrinter2::formatSimplifiedRadioFrame(SimplifiedRadioFrame *packet) const
+{
+    std::ostringstream os;
+
+    os << "RADIO from " << packet->getSenderPos() << " on " << packet->getCarrierFrequency()/1e6
+       << "MHz, ch=" << packet->getChannelNumber() << ", duration=" << SIMTIME_DBL(packet->getDuration())*1000 << "ms";
     return os.str();
 }
 
