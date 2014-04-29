@@ -22,6 +22,7 @@
 #include "ARPPacket_m.h"
 #include "EtherFrame.h"
 #include "ICMPMessage.h"
+#include "Ieee80211Frame_m.h"
 #include "INetworkDatagram.h"
 #include "IPv4Datagram.h"
 #include "PingPayload_m.h"
@@ -35,16 +36,19 @@
 class INET_API InetPacketPrinter2 : public cMessagePrinter
 {
     protected:
-        mutable bool enabled;
+        mutable bool showEncapsulatedPackets;
+        mutable Address srcAddr;
+        mutable Address destAddr;
     protected:
         std::string formatARPPacket(ARPPacket *packet) const;
-        std::string formatICMPPacket(Address srcAddr, Address destAddr, ICMPMessage *packet) const;
-        std::string formatPingPayload(Address srcAddr, Address destAddr, PingPayload *packet) const;
+        std::string formatICMPPacket(ICMPMessage *packet) const;
+        std::string formatIeee80211Frame(Ieee80211Frame *packet) const;
+        std::string formatPingPayload(PingPayload *packet) const;
         std::string formatRIPPacket(RIPPacket *packet) const;
-        std::string formatTCPPacket(Address srcAddr, Address destAddr, TCPSegment *tcpSeg) const;
-        std::string formatUDPPacket(Address srcAddr, Address destAddr, UDPPacket *udpPacket) const;
+        std::string formatTCPPacket(TCPSegment *tcpSeg) const;
+        std::string formatUDPPacket(UDPPacket *udpPacket) const;
     public:
-        InetPacketPrinter2() { enabled = true; }
+        InetPacketPrinter2() { showEncapsulatedPackets = true; }
         virtual ~InetPacketPrinter2() {}
         virtual int getScoreFor(cMessage *msg) const;
         virtual void printMessage(std::ostream& os, cMessage *msg) const;
@@ -60,39 +64,46 @@ int InetPacketPrinter2::getScoreFor(cMessage *msg) const
 void InetPacketPrinter2::printMessage(std::ostream& os, cMessage *msg) const
 {
     std::string outs;
-    Address srcAddr, destAddr;
 
-    enabled = true;
-    for (cPacket *pk = dynamic_cast<cPacket *>(msg); enabled && pk; pk = pk->getEncapsulatedPacket()) {
+    //reset mutable variables
+    srcAddr = destAddr = Address();
+    showEncapsulatedPackets = true;
+
+    for (cPacket *pk = dynamic_cast<cPacket *>(msg); showEncapsulatedPackets && pk; pk = pk->getEncapsulatedPacket()) {
         std::ostringstream out;
         if (dynamic_cast<INetworkDatagram *>(pk)) {
             INetworkDatagram *dgram = dynamic_cast<INetworkDatagram *>(pk);
             srcAddr = dgram->getSourceAddress();
             destAddr = dgram->getDestinationAddress();
-            out << pk->getClassName() << ": " << srcAddr << " > " << destAddr;
             if (dynamic_cast<IPv4Datagram *>(pk)) {
                 IPv4Datagram *ipv4dgram = static_cast<IPv4Datagram *>(pk);
+                out << "IPv4: " << srcAddr << " > " << destAddr;
                 if (ipv4dgram->getMoreFragments() || ipv4dgram->getFragmentOffset() > 0) {
                     out << " " << (ipv4dgram->getMoreFragments() ? "" : "last ")
                         << "fragment with offset=" << ipv4dgram->getFragmentOffset() << " of ";
                 }
             }
+            else
+                out << pk->getClassName() << ": " << srcAddr << " > " << destAddr;
         }
         else if (dynamic_cast<EtherFrame *>(pk)) {
             EtherFrame *eth = static_cast<EtherFrame *>(pk);
             out << "ETH: " << eth->getSrc() << " > " << eth->getDest() << " (" << eth->getByteLength() << " bytes)";
         }
         else if (dynamic_cast<TCPSegment *>(pk)) {
-            out << formatTCPPacket(srcAddr, destAddr, static_cast<TCPSegment *>(pk));
+            out << formatTCPPacket(static_cast<TCPSegment *>(pk));
         }
         else if (dynamic_cast<UDPPacket *>(pk)) {
-            out << formatUDPPacket(srcAddr, destAddr, static_cast<UDPPacket *>(pk));
+            out << formatUDPPacket(static_cast<UDPPacket *>(pk));
         }
         else if (dynamic_cast<ICMPMessage *>(pk)) {
-            out << formatICMPPacket(srcAddr, destAddr, static_cast<ICMPMessage *>(pk));
+            out << formatICMPPacket(static_cast<ICMPMessage *>(pk));
+        }
+        else if (dynamic_cast<Ieee80211Frame *>(pk)) {
+            out << formatIeee80211Frame(static_cast<Ieee80211Frame *>(pk));
         }
         else if (dynamic_cast<PingPayload *>(pk)) {
-            out << formatPingPayload(srcAddr, destAddr, static_cast<PingPayload *>(pk));
+            out << formatPingPayload(static_cast<PingPayload *>(pk));
         }
         else if (dynamic_cast<ARPPacket *>(pk)) {
             out << formatARPPacket(static_cast<ARPPacket *>(pk));
@@ -113,20 +124,116 @@ std::string InetPacketPrinter2::formatARPPacket(ARPPacket *packet) const
 {
     std::ostringstream os;
     switch (packet->getOpcode()) {
-        case ARP_REQUEST: os << "ARP req:"; break;
-        case ARP_REPLY: os << "ARP reply:"; break;
-        case ARP_RARP_REQUEST: os << "RARP req:"; break;
-        case ARP_RARP_REPLY: os << "RARP reply:"; break;
-        default: os << "ARP ???:"; break;
+        case ARP_REQUEST:
+            os << "ARP req: " << packet->getDestIPAddress()
+               << "=? (s=" << packet->getSrcIPAddress() << "(" << packet->getSrcMACAddress() << "))";
+            break;
+        case ARP_REPLY:
+            os << "ARP reply: "
+            << packet->getSrcIPAddress() << "=" << packet->getSrcMACAddress()
+            << " (d=" << packet->getDestIPAddress() << "(" << packet->getDestMACAddress() << "))"
+            ;
+            break;
+        case ARP_RARP_REQUEST:
+            os << "RARP req: " << packet->getDestMACAddress()
+               << "=? (s=" << packet->getSrcIPAddress() << "(" << packet->getSrcMACAddress() << "))";
+            break;
+        case ARP_RARP_REPLY:
+            os << "RARP reply: "
+               << packet->getSrcMACAddress() << "=" << packet->getSrcIPAddress()
+               << " (d=" << packet->getDestIPAddress() << "(" << packet->getDestMACAddress() << "))";
+            break;
+        default:
+            os << "ARP op=" << packet->getOpcode() << ": d=" << packet->getDestIPAddress()
+               << "(" << packet->getDestMACAddress()
+               << ") s=" << packet->getSrcIPAddress()
+               << "(" << packet->getSrcMACAddress() << ")";
+            break;
     }
-    os << " d=" << packet->getDestIPAddress()
-       << "(" << packet->getDestMACAddress()
-       << ") s=" << packet->getSrcIPAddress()
-       << "(" << packet->getSrcMACAddress() << ")";
     return os.str();
 }
 
-std::string InetPacketPrinter2::formatTCPPacket(Address srcAddr, Address destAddr, TCPSegment *tcpSeg) const
+std::string InetPacketPrinter2::formatIeee80211Frame(Ieee80211Frame *packet) const
+{
+    std::ostringstream os;
+
+    os << "WLAN ";
+    switch (packet->getType()) {
+        case ST_ASSOCIATIONREQUEST:
+            os << " assoc req";
+            break;
+        case ST_ASSOCIATIONRESPONSE:
+            os << " assoc resp";
+            break;
+        case ST_REASSOCIATIONREQUEST:
+            os << " reassoc req";
+            break;
+        case ST_REASSOCIATIONRESPONSE:
+            os << " reassoc resp";
+            break;
+        case ST_PROBEREQUEST:
+            os << " probe request";
+            break;
+        case ST_PROBERESPONSE:
+            os << " probe response";
+            break;
+        case ST_BEACON:
+            os << "beacon";
+            break;
+        case ST_ATIM:
+            os << " atim";
+            break;
+        case ST_DISASSOCIATION:
+            os << " disassoc";
+            break;
+        case ST_AUTHENTICATION:
+            os << " auth";
+            break;
+        case ST_DEAUTHENTICATION:
+            os << " deauth";
+            break;
+        case ST_ACTION:
+            os << " action";
+            break;
+        case ST_NOACKACTION:
+            os << " noackaction";
+            break;
+        case ST_PSPOLL:
+            os << " pspoll";
+            break;
+        case ST_RTS:
+        {
+            Ieee80211RTSFrame *pk = check_and_cast<Ieee80211RTSFrame *>(packet);
+            os << " rts " << pk->getTransmitterAddress() << " to " << packet->getReceiverAddress();
+            break;
+        }
+        case ST_CTS:
+            os << " cts " << packet->getReceiverAddress();
+            break;
+        case ST_ACK:
+            os << " ack " << packet->getReceiverAddress();
+            break;
+        case ST_BLOCKACK_REQ:
+            os << " reassoc resp";
+            break;
+        case ST_BLOCKACK:
+            os << " block ack";
+            break;
+        case ST_DATA:
+            os << " data";
+            break;
+        case ST_LBMS_REQUEST:
+            os << " lbms req";
+            break;
+        case ST_LBMS_REPORT:
+            os << " lbms report";
+            break;
+        default: os << "??? (" << packet->getClassName() << ")"; break;
+    }
+    return os.str();
+}
+
+std::string InetPacketPrinter2::formatTCPPacket(TCPSegment *tcpSeg) const
 {
     std::ostringstream os;
     os << "TCP: " << srcAddr << '.' << tcpSeg->getSrcPort() << " > " << destAddr << '.' << tcpSeg->getDestPort() << ":";
@@ -160,7 +267,7 @@ std::string InetPacketPrinter2::formatTCPPacket(Address srcAddr, Address destAdd
     return os.str();
 }
 
-std::string InetPacketPrinter2::formatUDPPacket(Address srcAddr, Address destAddr, UDPPacket *udpPacket) const
+std::string InetPacketPrinter2::formatUDPPacket(UDPPacket *udpPacket) const
 {
     std::ostringstream os;
     os << "UDP: " << srcAddr << '.' << udpPacket->getSourcePort() << " > " << destAddr << '.' << udpPacket->getDestinationPort()
@@ -168,7 +275,7 @@ std::string InetPacketPrinter2::formatUDPPacket(Address srcAddr, Address destAdd
     return os.str();
 }
 
-std::string InetPacketPrinter2::formatPingPayload(Address srcAddr, Address destAddr, PingPayload *packet) const
+std::string InetPacketPrinter2::formatPingPayload(PingPayload *packet) const
 {
     std::ostringstream os;
     ICMPMessage *owner = dynamic_cast<ICMPMessage *>(packet->getOwner());
@@ -188,7 +295,7 @@ std::string InetPacketPrinter2::formatPingPayload(Address srcAddr, Address destA
     return os.str();
 }
 
-std::string InetPacketPrinter2::formatICMPPacket(Address srcAddr, Address destAddr, ICMPMessage *packet) const
+std::string InetPacketPrinter2::formatICMPPacket(ICMPMessage *packet) const
 {
     std::ostringstream os;
     switch (packet->getType()) {
@@ -202,7 +309,7 @@ std::string InetPacketPrinter2::formatICMPPacket(Address srcAddr, Address destAd
             os << "ICMP dest unreachable " << srcAddr << " to " << destAddr << " type=" << packet->getType() << " code=" << packet->getCode()
                << " origin:  \t";
             InetPacketPrinter2().printMessage(os, packet->getEncapsulatedPacket());
-            enabled = false; // stop printing
+            showEncapsulatedPackets = false; // stop printing
             break;
         default:
             os << "ICMP " << srcAddr << " to " << destAddr << " type=" << packet->getType() << " code=" << packet->getCode();
