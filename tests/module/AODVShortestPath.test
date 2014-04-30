@@ -1,6 +1,6 @@
 %description:
 In this example there are two possible routes between the sender and the receiver.
-This tests demonstrates that the AODV choses the shortest path, that is, the route
+This tests demonstrates that the AODV chooses the shortest path, that is, the route
 which has the lowest hop count.
 %#--------------------------------------------------------------------------------------------------------------
 %file: test.ned

@@ -1,6 +1,6 @@
 %description:
-This example tests a single route request with two intermediate node
-between the sender and the receiver. The two intermediate node are
+This example tests a single route request with two intermediate nodes
+between the sender and the receiver. The two intermediate nodes are
 placed to the same distance from both the receiver and the sender.
 %#--------------------------------------------------------------------------------------------------------------
 %file: test.ned

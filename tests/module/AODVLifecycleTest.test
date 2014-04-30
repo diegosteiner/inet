@@ -1,5 +1,5 @@
 %description:
-This example tests the AODV's lifecycle capability. When intermediateNodeA shutdowns at 12.3s
+This example tests the AODV's lifecycle capability. When intermediateNodeA shuts down at 12.3s
 sender gets a link break signal and then discovers a new route to the receiver node.
 %#--------------------------------------------------------------------------------------------------------------
 %file: test.ned
