@@ -26,6 +26,7 @@
 #include "IARPCache.h"
 #include "ICMPMessage_m.h"
 #include "Ieee802Ctrl_m.h"
+#include "Ieee8021dBPDU_m.h"
 #include "IRoutingTable.h"
 #include "InterfaceTableAccess.h"
 #include "IPSocket.h"
@@ -141,6 +142,10 @@ void IPv4::endService(cPacket *packet)
             handleIncomingARPPacket((ARPPacket *)packet, fromIE);
         else if (dynamic_cast<IPv4Datagram *>(packet))
             handleIncomingDatagram((IPv4Datagram *)packet, fromIE);
+        else if (dynamic_cast<BPDU *>(packet))
+        {
+            handleIncomingBPDU((BPDU *)packet, fromIE);
+        }
         else
             throw cRuntimeError(packet, "Unexpected packet type");
     }
@@ -259,6 +264,11 @@ void IPv4::handleIncomingARPPacket(ARPPacket *packet, const InterfaceEntry *from
     Ieee802Ctrl *ctrl = check_and_cast<Ieee802Ctrl*>(packet->getControlInfo());
     ctrl->setInterfaceId(fromIE->getInterfaceId());
     send(packet, arpOutGate);
+}
+
+void IPv4::handleIncomingBPDU(BPDU *packet, const InterfaceEntry *fromIE)
+{
+    //TODO implement me, if necessary
 }
 
 void IPv4::handleIncomingICMP(ICMPMessage *packet)

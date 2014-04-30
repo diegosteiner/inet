@@ -23,6 +23,7 @@
 
 #include "IARPCache.h"
 #include "ICMPAccess.h"
+#include "Ieee8021dBPDU_m.h"
 #include "ILifecycle.h"
 #include "INetfilter.h"
 #include "IPv4Datagram.h"
@@ -162,6 +163,11 @@ class INET_API IPv4 : public QueueBase, public INetfilter, public ILifecycle, pu
      * Handle incoming ARP packets by sending them over to ARP.
      */
     virtual void handleIncomingARPPacket(ARPPacket *packet, const InterfaceEntry *fromIE);
+
+    /**
+     * TODO
+     */
+    virtual void handleIncomingBPDU(BPDU *packet, const InterfaceEntry *fromIE);
 
     /**
      * Handle incoming ICMP messages.
