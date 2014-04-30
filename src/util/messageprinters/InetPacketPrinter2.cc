@@ -188,7 +188,7 @@ std::string InetPacketPrinter2::formatIeee80211Frame(Ieee80211Frame *packet) con
         case ST_ATIM:
             os << " atim";     //TODO
             break;
-        case ST_DISASSOCIATION:     //TODO
+        case ST_DISASSOCIATION:
             os << " disassoc";     //TODO
             break;
         case ST_AUTHENTICATION:
