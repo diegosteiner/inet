@@ -165,7 +165,7 @@ class INET_API IPv4 : public QueueBase, public INetfilter, public ILifecycle, pu
     virtual void handleIncomingARPPacket(ARPPacket *packet, const InterfaceEntry *fromIE);
 
     /**
-     * TODO
+     * Handle incoming BPDU packets by sending them over to STP/RSTP, or just ignore them if they are irrelevant.
      */
     virtual void handleIncomingBPDU(BPDU *packet, const InterfaceEntry *fromIE);
 

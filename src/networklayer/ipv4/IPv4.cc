@@ -143,9 +143,7 @@ void IPv4::endService(cPacket *packet)
         else if (dynamic_cast<IPv4Datagram *>(packet))
             handleIncomingDatagram((IPv4Datagram *)packet, fromIE);
         else if (dynamic_cast<BPDU *>(packet))
-        {
             handleIncomingBPDU((BPDU *)packet, fromIE);
-        }
         else
             throw cRuntimeError(packet, "Unexpected packet type");
     }
@@ -268,7 +266,7 @@ void IPv4::handleIncomingARPPacket(ARPPacket *packet, const InterfaceEntry *from
 
 void IPv4::handleIncomingBPDU(BPDU *packet, const InterfaceEntry *fromIE)
 {
-    //TODO implement me, if necessary
+    return; // ignoring BPDU
 }
 
 void IPv4::handleIncomingICMP(ICMPMessage *packet)
