@@ -266,7 +266,8 @@ void IPv4::handleIncomingARPPacket(ARPPacket *packet, const InterfaceEntry *from
 
 void IPv4::handleIncomingBPDU(BPDU *packet, const InterfaceEntry *fromIE)
 {
-    return; // ignoring BPDU
+    dropAndDelete(packet);
+    return;
 }
 
 void IPv4::handleIncomingICMP(ICMPMessage *packet)
